@@ -150,7 +150,9 @@
 		  max-height (max (cdr size) max-height)))
        finally (return (values (ceiling max-width) (ceiling max-height))))))
 
-(defun pack-font (&optional (font-pathname #p"/System/Volumes/Data/Users/awolven/Library/Fonts/DejaVuSansMono.ttf") (ppem 12))
+(defun pack-font (&optional (font-pathname #+darwin #p"/System/Volumes/Data/Users/awolven/Library/Fonts/DejaVuSansMono.ttf"
+					   #+linux #p"/usr/share/fonts/TTF/DejaVuSansMono.ttf")
+		    (ppem 12))
   (let* ((font-loader (zpb-ttf::open-font-loader-from-file font-pathname)))
     (multiple-value-bind (cell-width cell-height) (max-width-height2 font-loader ppem)
 	(let ((sprites ()))
