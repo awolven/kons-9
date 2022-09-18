@@ -25,8 +25,6 @@
      (:file "src/kernel/noise")
      (:file "src/graphics/opengl/opengl")
      (:file "src/graphics/opengl/ui")
-     #+darwin(:file "src/graphics/opengl/opengl2-text")
-     #-darwin(:file "src/graphics/opengl/opengl3-text")
      (:file "src/kernel/item")
      (:file "src/kernel/transform")
      (:file "src/kernel/scene-item")
@@ -59,7 +57,11 @@
      (:file "src/plugins/usd")
      (:file "src/plugins/obj")
      (:file "src/ui/command-table")
-     (:file "src/graphics/glfw/minimal-ui")))
+     (:file "src/graphics/glfw/minimal-ui")
+     (:file "src/graphics/opengl/text-common")
+     (:file "src/graphics/opengl/text-opengl-common")
+     #+darwin(:file "src/graphics/opengl/opengl2-text")
+     #-darwin(:file "src/graphics/opengl/opengl3-text")))
 
 #+nil (asdf:load-system :kons-9)
 
