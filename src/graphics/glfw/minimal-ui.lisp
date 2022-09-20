@@ -44,19 +44,20 @@
 
 ;;; display the view
 (defmethod draw-scene-view ((view scene-view))
+
   (3d-setup-buffer)
   (3d-setup-projection)
   (3d-update-light-settings)
   (when (scene view)
     (draw (scene view)))
   (3d-cleanup-render)
-  (when *display-ground-plane?*
-    (draw-ground-plane))
   (when *display-axes?*
     (draw-world-axes))
+  (when *display-ground-plane?*
+    (draw-ground-plane))
 
   ;; display ui layer
-  (2d-setup-projection)
+  (2d-setup-projection (first *window-size*) (second *window-size*))
   (draw-scene-view-ui view)
 
   (progn
@@ -220,6 +221,12 @@
            ;; as default and use that for event handling
            (setf *default-scene-view* scene-view)
 
+           ;; assume monitor scale is same in x and y, just use first value
+           ;; also assume we are running on the "primary" monitor
+           (setf (monitor-scale *drawing-settings*)
+                 (first (glfw:get-monitor-content-scale (glfw:get-primary-monitor))))
+           (set-lines-thin)
+
            (setf %gl:*gl-get-proc-address* #'glfw:get-proc-address)
            (glfw:set-key-callback 'key-callback)
            (glfw:set-mouse-button-callback 'mouse-callback)
@@ -228,7 +235,7 @@
            (setf *window-size* (glfw:get-window-size))
            (setf *viewport-aspect-ratio* (/ (first *window-size*) (second *window-size*)))
            (update-window-title glfw:*window*)
-	   (initial-text-engine-setup)
+           (initial-text-engine-setup)
            (loop until (glfw:window-should-close-p)
 	      do (draw-scene-view *default-scene-view*)
                  do (glfw:swap-buffers)
@@ -236,6 +243,6 @@
 
 (defmacro with-clear-scene (&body body)
   `(progn
-     (clear-scene *scene*)
+     (clear-scene (scene *default-scene-view*))
      ,@body))
 
