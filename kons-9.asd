@@ -15,7 +15,12 @@
      #:cl-opengl
      #:cl-glu
      #:cl-glfw3
-     #:origin) 
+     #:origin
+     #:3b-bmfont
+     #:sdf/bmfont
+     #:zpb-ttf
+     #:alloy
+     #:alloy-examples)
     :serial t
     :components
     ((:file "src/package")
@@ -27,10 +32,6 @@
      (:file "src/kernel/noise")
      (:file "src/graphics/opengl/opengl")
      (:file "src/graphics/opengl/ui")
-<<<<<<< HEAD
-=======
-     ;(:file "src/graphics/opengl/text")
->>>>>>> b380f494cac5d70515ff3be62160c476fdc89a4f
      (:file "src/kernel/item")
      (:file "src/kernel/transform")
      (:file "src/kernel/scene-item")
@@ -66,10 +67,11 @@
      (:file "src/plugins/obj")
      (:file "src/ui/command-table")
      (:file "src/graphics/glfw/minimal-ui")
-     (:file "src/graphics/opengl/text-common")
-     (:file "src/graphics/opengl/text-opengl-common")
+     (:file "text/text")
+     #+NIL(:file "src/graphics/opengl/text-common")
+     #+NIL(:file "src/graphics/opengl/text-opengl-common")
      #+darwin(:file "src/graphics/opengl/opengl2-text")
-     #-darwin(:file "src/graphics/opengl/opengl3-text")))
+     #+(and nil (not darwin))(:file "src/graphics/opengl/opengl3-text")))
 
 #+nil (asdf:load-system :kons-9)
 

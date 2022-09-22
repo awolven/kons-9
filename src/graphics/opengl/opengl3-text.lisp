@@ -58,9 +58,9 @@
 
       (setf attrib-location-tex (gl:get-uniform-location shader-handle "Texture"))
       (setf attrib-location-proj-mtx (gl:get-uniform-location shader-handle "ProjMtx"))
-      (setf attrib-location-vtx-pos (glgetattriblocation_foo shader-handle "Position"))
-      (setf attrib-location-vtx-uv (glgetattriblocation_foo shader-handle "UV"))
-      (setf attrib-location-vtx-color (glgetattriblocation_foo shader-handle "Color"))
+      (setf attrib-location-vtx-pos (gl:get-attrib-location shader-handle "Position"))
+      (setf attrib-location-vtx-uv (gl:get-attrib-location shader-handle "UV"))
+      (setf attrib-location-vtx-color (gl:get-attrib-location shader-handle "Color"))
 	
       (setf vbo-handle (elt (gl:gen-buffers 1) 0))
       (setf elements-handle (elt (gl:gen-buffers 1) 0))
@@ -348,15 +348,15 @@
 			       (let ((vertex-buffer-size (draw-list-vtx-buffer-size draw-list))
 				     (index-buffer-size (draw-list-idx-buffer-size draw-list)))
 				     
-				 (glbufferdata_foo GL_ARRAY_BUFFER
-						   vertex-buffer-size
-						   (draw-list-vtx-buffer draw-list)
-						   GL_STREAM_DRAW)
+               (%gl:buffer-data :array-buffer
+                                vertex-buffer-size
+                               (draw-list-vtx-buffer draw-list)
+                               :stream-draw )
 
-				 (glbufferdata_foo GL_ELEMENT_ARRAY_BUFFER
-						   index-buffer-size
-						   (draw-list-idx-buffer draw-list)
-						   GL_STREAM_DRAW))
+               (%gl:buffer-data :element-array-buffer
+                                index-buffer-size
+                                (draw-list-idx-buffer draw-list)
+                                :stream-draw ))
 				   
 			       (render-draw-list draw-list fb-width fb-height clip-off-x clip-off-y clip-scale-x clip-scale-y))
 	    
@@ -374,8 +374,8 @@
 
 	    (gl:bind-buffer :array-buffer last-array-buffer)
 
-	    (glBlendEquationSeparate_foo last-blend-equation-rgb last-blend-equation-alpha)
-	    (glBlendFuncSeparate_foo last-blend-src-rgb last-blend-dst-rgb last-blend-src-alpha last-blend-dst-alpha)
+	    (gl:blend-equation-separate last-blend-equation-rgb last-blend-equation-alpha)
+	    (gl:blend-func-separate last-blend-src-rgb last-blend-dst-rgb last-blend-src-alpha last-blend-dst-alpha)
 
 	    (if last-enabled-blend? (gl:enable :blend) (gl:disable :blend))
 	    (if last-enabled-cull-face? (gl:enable :cull-face) (gl:disable :cull-face))

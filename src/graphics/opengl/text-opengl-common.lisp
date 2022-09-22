@@ -67,7 +67,8 @@
 (defconstant GL_FRONT_AND_BACK #x0408)
 
 (defun ensure-font (&optional (pathname #+darwin #p"/System/Volumes/Data/Users/awolven/Library/Fonts/DejaVuSansMono.ttf"
-					#+linux #p"/usr/share/fonts/TTF/DejaVuSansMono.ttf")
+                                        #+linux #p"/usr/share/fonts/TTF/DejaVuSansMono.ttf"
+                                        #+windows #p"c:/Windows/Fonts/DejaVuSansMono.ttf")
 		      (ppem 12))
   (multiple-value-bind (grayscale edge-size glyph-max-width glyph-max-height sprites) (pack-font pathname ppem)
 
