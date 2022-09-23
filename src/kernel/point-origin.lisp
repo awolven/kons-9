@@ -43,7 +43,7 @@
   (p:- p2 p1))
 
 (defun p-smooth-lerp (f p1 p2)
-  (labels ((cubic (x) (+ (* -2.0 (* x x x)) (* 3.0 (* x x)))))
+  (labels ((cubic (x) (+ (* -2.0f0 (* x x x)) (* 3.0f0 (* x x)))))
     (p:lerp p1 p2 (cubic f))))
 
 
@@ -77,7 +77,7 @@
   (p:+ p (p! (rand1 amount) (rand1 amount) (rand1 amount))))
 
 (defun p-midpoint (p1 p2)
-  (p:scale (p:+ p1 p2) 0.5))
+  (p:scale (p:+ p1 p2) 0.5f0))
 
 (defun p-center (points)
   (p/ (reduce #'p+ points) (length points)))
@@ -132,5 +132,5 @@
       (p:max! bounds-hi bounds-hi p))
     (values bounds-lo bounds-hi)))
 
-(defun p-sphericize (p radius &optional (factor 1.0) (center +origin+))
+(defun p-sphericize (p radius &optional (factor 1.0f0) (center +origin+))
   (p:lerp p (p* (p:normalize (p-from-to center p)) radius) factor))

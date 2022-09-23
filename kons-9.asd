@@ -67,11 +67,10 @@
      (:file "src/plugins/obj")
      (:file "src/ui/command-table")
      (:file "src/graphics/glfw/minimal-ui")
-     (:file "text/text")
-     #+NIL(:file "src/graphics/opengl/text-common")
-     #+NIL(:file "src/graphics/opengl/text-opengl-common")
+     (:file "src/graphics/opengl/text-common")
+     (:file "src/graphics/opengl/text-opengl-common")
      #+darwin(:file "src/graphics/opengl/opengl2-text")
-     #+(and nil (not darwin))(:file "src/graphics/opengl/opengl3-text")))
+     #-darwin(:file "src/graphics/opengl/opengl3-text")))
 
 #+nil (asdf:load-system :kons-9)
 
