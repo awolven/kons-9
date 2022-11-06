@@ -32,6 +32,7 @@
    ;; graphics
    (:file "src/graphics/opengl/opengl")
    (:file "src/graphics/opengl/ui-widgets")
+   (:file "src/graphics/krma/krma")
    ;; kernel
    (:file "src/kernel/item")
    (:file "src/kernel/transform")

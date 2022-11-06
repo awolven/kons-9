@@ -4,4 +4,8 @@
   (:export
    #:*scene*
    #:run
-   #:show-window))
+   #:show-window)
+  (:import-from #:vk
+		#:*app*)
+  (:import-from #:krma
+		#:application-scene))
