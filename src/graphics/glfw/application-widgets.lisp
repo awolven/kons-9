@@ -14,15 +14,17 @@
 
 (defmethod draw-view :after ((view ui-motion-outliner-item) x-offset y-offset)
   ;; draw bar showing motion timing data
+  (with-app-globals (*app*)
   (with-accessors ((x ui-x) (y ui-y) (w ui-w) (h ui-h))
       view
-    (gl:color 0.5 0.5 1.0 0.8)
+    #-krma(gl:color 0.5 0.5 1.0 0.8)
+    #+krma(setf (fg-color *drawing-settings*) (c! 0.5 0.5 1.0 0.8))
     (let* (;(motion (data view))
            (base-width (- w 20))
            (timing (absolute-timing view))
            (x0 (+ x (* base-width (aref timing 0)))) ;(start-time motion))))
            (w0 (* base-width (aref timing 1)))) ;(duration motion))))
-      (draw-rect-fill (+ x0 x-offset 10) (+ y y-offset +5) w0 (- h 10)))))
+      (draw-rect-fill (+ x0 x-offset 10) (+ y y-offset +5) w0 (- h 10))))))
 
 ;;;; ui-motion-outliner-viewer ========================================================
 
@@ -38,11 +40,13 @@
 
 (defmethod draw-view :after ((view ui-motion-outliner-viewer) x-offset y-offset)
   ;; draw current frame indicator
-  (gl:color 0.3 0.3 0.6 1.0)
-  (let ((rel-time (relative-current-time (scene *scene-view*)))
-        (x-lo (+ (ui-x view) x-offset 10))
-        (x-hi (+ (ui-x view) (ui-w view) x-offset -10))
-        (y-lo (+ (ui-y view) y-offset *ui-button-item-height*))
-        (y-hi (+ (ui-y view) (ui-h view) y-offset)))
-    (draw-line (lerp rel-time x-lo x-hi) y-lo
-               (lerp rel-time x-lo x-hi) y-hi)))
+  (with-app-globals (*app*)
+    #-krma(gl:color 0.3 0.3 0.6 1.0)
+    #+krma(setf (fg-color *drawing-settings*) (c! 0.3 0.3 0.6 1.0))
+    (let ((rel-time (relative-current-time (scene *scene-view*)))
+          (x-lo (+ (ui-x view) x-offset 10))
+          (x-hi (+ (ui-x view) (ui-w view) x-offset -10))
+          (y-lo (+ (ui-y view) y-offset *ui-button-item-height*))
+          (y-hi (+ (ui-y view) (ui-h view) y-offset)))
+      (draw-line (lerp rel-time x-lo x-hi) y-lo
+                 (lerp rel-time x-lo x-hi) y-hi))))

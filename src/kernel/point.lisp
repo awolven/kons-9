@@ -93,20 +93,20 @@
 ;;       (/ (y p1) (y p2))
 ;;       (/ (z p1) (z p2))))
 
-;; (defmethod p= ((p1 point) (p2 point) &optional (epsilon single-float-epsilon))
-;;   (and (< (abs (- (x p1) (x p2))) epsilon)
-;;        (< (abs (- (y p1) (y p2))) epsilon)
-;;        (< (abs (- (z p1) (z p2))) epsilon)))
+ (defmethod p= ((p1 point) (p2 point) &optional (epsilon single-float-epsilon))
+   (and (< (abs (- (x p1) (x p2))) epsilon)
+        (< (abs (- (y p1) (y p2))) epsilon)
+        (< (abs (- (z p1) (z p2))) epsilon)))
 
-;; (defmethod p-scale ((p point) factor)
-;;   (p! (* (x p) factor)
-;;       (* (y p) factor)
-;;       (* (z p) factor)))
+ (defmethod p-scale ((p point) factor)
+   (p! (* (x p) factor)
+       (* (y p) factor)
+       (* (z p) factor)))
 
-;; (defmethod p-negate ((p point))
-;;   (p! (- (x p))
-;;       (- (y p))
-;;       (- (z p))))
+ (defmethod p-negate ((p point))
+   (p! (- (x p))
+       (- (y p))
+       (- (z p))))
 
 
 (defun p-lerp (f p1 p2)

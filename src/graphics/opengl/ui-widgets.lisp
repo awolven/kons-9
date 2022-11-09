@@ -1,9 +1,18 @@
 (in-package #:kons-9)
 
+
 ;;;; ui globals ================================================================
 
 (defparameter *ui-clip-rect* nil)
 
+(defun render-text (pos-x pos-y string &key (color #x000000ff))
+  (when (not (stringp string))
+    (setq string (princ-to-string string)))
+  (krma::draw-text string  pos-x (- pos-y 12.6) :color color))
+
+;;;; ui utils ==================================================================
+
+#+NIL(
 (defparameter *ui-popup-menu-width* 200)
 (defparameter *ui-button-item-width* 200)
 (defparameter *ui-button-item-height* 25)
@@ -20,11 +29,13 @@
 ;;; TODO -- temporary, query font later
 (defparameter *ui-font-width* 7.3)
 (defparameter *ui-font-height* 16)
+      )
 
 ;;;; utils ====================================================================
 
 (defun ui-text-width (text)
-  (* (length text) *ui-font-width*))
+  (with-app-globals (*app*)
+    (* (length text) *ui-font-width*)))
 
 (defun ui-centered-text-x (text width)
   (floor (* 0.5 (- width (ui-text-width text)))))
@@ -102,7 +113,7 @@
    (text-padding 10))
   (:default-initargs
    :draw-border? nil
-   :ui-h *ui-button-item-height*))
+   :ui-h (ui-button-item-height *app*)))
 
 (defmethod set-width-for-text ((view ui-view))
   (setf (ui-w view) (+ (ui-text-width (text view)) (* 2 (text-padding view)))))
@@ -161,10 +172,11 @@
 
 (defmethod do-action ((view ui-text-box-item) x y button modifiers)
   (declare (ignore button modifiers))
-  (setf *ui-keyboard-focus* view)
-  (setf (cursor-position view) (max 0
-                                    (min (length (text view))
-                                         (floor (/ (first (local-coords view x y)) *ui-font-width*))))))
+  (with-app-globals (*app*)
+    (setf *ui-keyboard-focus* view)
+    (setf (cursor-position view) (max 0
+                                      (min (length (text view))
+                                           (floor (/ (first (local-coords view x y)) *ui-font-width*)))))))
 
 ;;; TODO ++ edit text
 ;;; TODO ++ handle char input properly
@@ -227,8 +239,8 @@
 (defclass-kons-9 ui-group (ui-view)
   ((layout :vertical) ; :fit-children, :vertical, :horizontal
    (justification :center) ; :center :left/top :right/bottom
-   (spacing *ui-default-spacing*)
-   (padding *ui-default-padding*)
+   (spacing (ui-default-spacing *app*))
+   (padding (ui-default-padding *app*))
    (title nil)
    (children (make-array 0 :adjustable t :fill-pointer 0))))
 
@@ -275,83 +287,86 @@
   view)
 
 (defmethod update-layout-fit-children ((view ui-group))
-  (with-accessors ((title title) (padding padding) (children children))
-      view
-    (if (= (length children) 0)
-        (progn
-          (setf (ui-w view) (if title (+ (ui-text-width title) *ui-default-padding*) *ui-button-item-width*))
-          (setf (ui-h view) *ui-button-item-height*))
-        (let* ((x (reduce 'min children :key 'ui-x))
-               (y (reduce 'min children :key 'ui-y))
-               (w (reduce 'max (map 'vector (lambda (child) (+ (ui-x child) (ui-w child))) children)))
-               (h (reduce 'max (map 'vector (lambda (child) (+ (ui-y child) (ui-h child))) children)))
-               (dx (- x padding))
-               (dy (- y padding)))
-          (setf (ui-w view) (+ dx w padding))
-          (setf (ui-h view) (+ dy h padding))
-          (loop for child across children
-                do (incf (ui-x child) dx)
-                   (incf (ui-y child) dy))))))
+  (with-app-globals (*app*)
+    (with-accessors ((title title) (padding padding) (children children))
+        view
+      (if (= (length children) 0)
+          (progn
+            (setf (ui-w view) (if title (+ (ui-text-width title) *ui-default-padding*) *ui-button-item-width*))
+            (setf (ui-h view) *ui-button-item-height*))
+          (let* ((x (reduce 'min children :key 'ui-x))
+                 (y (reduce 'min children :key 'ui-y))
+                 (w (reduce 'max (map 'vector (lambda (child) (+ (ui-x child) (ui-w child))) children)))
+                 (h (reduce 'max (map 'vector (lambda (child) (+ (ui-y child) (ui-h child))) children)))
+                 (dx (- x padding))
+                 (dy (- y padding)))
+            (setf (ui-w view) (+ dx w padding))
+            (setf (ui-h view) (+ dy h padding))
+            (loop for child across children
+                  do (incf (ui-x child) dx)
+                     (incf (ui-y child) dy)))))))
 
 (defmethod update-layout-horizontal ((view ui-group))
-  (with-accessors ((title title) (padding padding) (spacing spacing) (justification justification)
-                   (children children))
-      view
-    (if (= (length children) 0)
-        (progn
-          (setf (ui-w view) (if title (+ (ui-text-width title) *ui-default-padding*) *ui-button-item-width*))
-          (setf (ui-h view) *ui-button-item-height*))
-        (let* ((title-w (if title (+ (ui-text-width title) *ui-default-padding*) 0))
-               (title-h (if title *ui-button-item-height* 0))
-               (width (max (+ (reduce '+ children :key 'ui-w)
-                              (* spacing (1- (length children)))
-                              (* padding 2))
-                           title-w))
-               (height (+ (reduce 'max children :key 'ui-h)
-                          (* padding 2)
-                          title-h))
-               (x padding))
-          (setf (ui-w view) width)
-          (setf (ui-h view) height)
-          (loop for child across children
-                do (setf (ui-y child) (case justification
-                                        (:left/top padding)
-                                        (:right/bottom (- (ui-h view) (ui-h child) padding))
-                                        (:center (/ (- (ui-h view) (ui-h child)) 2))))
-                   (setf (ui-x child) x)
-                   (incf x (+ (ui-w child) spacing))))))
-  view)
+  (with-app-globals (*app*)
+    (with-accessors ((title title) (padding padding) (spacing spacing) (justification justification)
+                     (children children))
+        view
+      (if (= (length children) 0)
+          (progn
+            (setf (ui-w view) (if title (+ (ui-text-width title) *ui-default-padding*) *ui-button-item-width*))
+            (setf (ui-h view) *ui-button-item-height*))
+          (let* ((title-w (if title (+ (ui-text-width title) *ui-default-padding*) 0))
+                 (title-h (if title *ui-button-item-height* 0))
+                 (width (max (+ (reduce '+ children :key 'ui-w)
+                                (* spacing (1- (length children)))
+                                (* padding 2))
+                             title-w))
+                 (height (+ (reduce 'max children :key 'ui-h)
+                            (* padding 2)
+                            title-h))
+                 (x padding))
+            (setf (ui-w view) width)
+            (setf (ui-h view) height)
+            (loop for child across children
+                  do (setf (ui-y child) (case justification
+                                          (:left/top padding)
+                                          (:right/bottom (- (ui-h view) (ui-h child) padding))
+                                          (:center (/ (- (ui-h view) (ui-h child)) 2))))
+                     (setf (ui-x child) x)
+                     (incf x (+ (ui-w child) spacing))))))
+    view))
 
 (defmethod update-layout-vertical ((view ui-group))
-  (with-accessors ((title title) (padding padding) (spacing spacing) (justification justification)
-                   (children children))
-      view
-    (if (= (length children) 0)
-        (progn
-          (setf (ui-w view) (if title
-                                (+ (ui-text-width title) *ui-default-padding*)
-                                *ui-button-item-width*))
-          (setf (ui-h view) *ui-button-item-height*))
-        (let* ((title-w (if title (+ (ui-text-width title) *ui-default-padding*) 0))
-               (title-h (if title *ui-button-item-height* 0))
-               (width (max (+ (reduce 'max children :key 'ui-w)
-                              (* padding 2))
-                           title-w))
-               (height (+ (reduce '+ children :key 'ui-h)
-                          (* spacing (1- (length children)))
-                          (* padding 2)
-                          title-h))
-               (y (+ padding title-h)))
-          (setf (ui-w view) width)
-          (setf (ui-h view) height)
-          (loop for child across children
-                do (setf (ui-x child) (case justification
-                                        (:left/top padding)
-                                        (:right/bottom (- (ui-w view) (ui-w child) padding))
-                                        (:center (/ (- (ui-w view) (ui-w child)) 2))))
-                   (setf (ui-y child) y)
-                   (incf y (+ (ui-h child) spacing))))))
-  view)
+  (with-app-globals (*app*)
+    (with-accessors ((title title) (padding padding) (spacing spacing) (justification justification)
+                     (children children))
+        view
+      (if (= (length children) 0)
+          (progn
+            (setf (ui-w view) (if title
+                                  (+ (ui-text-width title) *ui-default-padding*)
+                                  *ui-button-item-width*))
+            (setf (ui-h view) *ui-button-item-height*))
+          (let* ((title-w (if title (+ (ui-text-width title) *ui-default-padding*) 0))
+                 (title-h (if title *ui-button-item-height* 0))
+                 (width (max (+ (reduce 'max children :key 'ui-w)
+                                (* padding 2))
+                             title-w))
+                 (height (+ (reduce '+ children :key 'ui-h)
+                            (* spacing (1- (length children)))
+                            (* padding 2)
+                            title-h))
+                 (y (+ padding title-h)))
+            (setf (ui-w view) width)
+            (setf (ui-h view) height)
+            (loop for child across children
+                  do (setf (ui-x child) (case justification
+                                          (:left/top padding)
+                                          (:right/bottom (- (ui-w view) (ui-w child) padding))
+                                          (:center (/ (- (ui-w view) (ui-w child)) 2))))
+                     (setf (ui-y child) y)
+                     (incf y (+ (ui-h child) spacing))))))
+    view))
 
 ;;;; ui-message-box ===========================================================
 
@@ -500,13 +515,14 @@
    :bg-color (c! 1 1 1 0.5)))
 
 (defun make-status-bar ()
-  (let* ((status-bar (make-instance 'ui-status-bar :ui-x 0 :ui-h (* 2 *ui-button-item-height*))))
-    (ui-add-child status-bar (make-instance 'ui-label-item :text "Status Bar Item 1"))
-    (ui-add-child status-bar (make-instance 'ui-label-item :text "Status Bar Item 2"))
-    (ui-add-child status-bar (make-instance 'ui-label-item :text "Status Bar Item 3"))
-    (ui-add-child status-bar (make-instance 'ui-label-item :text "Status Bar Item 4"))
-    (ui-add-child status-bar (make-instance 'ui-label-item :text "Status Bar Item 5"))
-    status-bar))
+  (with-app-globals (*app*)
+    (let* ((status-bar (make-instance 'ui-status-bar :ui-x 0 :ui-h (* 2 *ui-button-item-height*))))
+      (ui-add-child status-bar (make-instance 'ui-label-item :text "Status Bar Item 1"))
+      (ui-add-child status-bar (make-instance 'ui-label-item :text "Status Bar Item 2"))
+      (ui-add-child status-bar (make-instance 'ui-label-item :text "Status Bar Item 3"))
+      (ui-add-child status-bar (make-instance 'ui-label-item :text "Status Bar Item 4"))
+      (ui-add-child status-bar (make-instance 'ui-label-item :text "Status Bar Item 5"))
+      status-bar)))
 
 (defmethod update-status-bar ((view ui-status-bar) &key (view-width nil) (view-height nil)
                                                      (str0 nil) (str1 nil) (str2 nil) (str3 nil) (str4 nil))
@@ -550,33 +566,34 @@
    :padding 0))
 
 (defmethod create-contents ((view ui-popup-menu))
-  (setf (fill-pointer (children view)) 0)
-  (let ((table (command-table view)))
-    (when table
-      (setf (title view) (title table))
-      (when (> (length (entries table)) 0)
-        (let ((width (reduce 'max
-                             (map 'vector (lambda (entry)
-                                            (+ (ui-text-width (string (help-string entry)))
-                                               (ui-text-width (key-binding-string (key-binding entry)))
-                                               30
-                                               (* 2 *ui-default-spacing*)))
-                                  (entries table)))))
-          (loop for entry across (entries table)
-                do (let ((tmp entry))     ;TODO -- without this all entries get fn of last entry???
-                     (vector-push-extend
-                      (make-instance 'ui-menu-item :ui-w width
-                                                   :ui-h *ui-button-item-height* 
-                                                   :text (string (help-string entry))
-                                                   :key-text (key-binding-string (key-binding entry))
-                                                   :is-active? t
-                                                   :help-string (format nil "Mouse: ~a. TAB: hide menu."
-                                                                        (string (help-string entry)))
-                                                   :on-click-fn (lambda (modifiers)
-                                                                  (declare (ignore modifiers))
-                                                                  (funcall (command-fn tmp))))
-                      (children view))))))))
-  (update-layout view))
+  (with-app-globals (*app*)
+    (setf (fill-pointer (children view)) 0)
+    (let ((table (command-table view)))
+      (when table
+        (setf (title view) (title table))
+        (when (> (length (entries table)) 0)
+          (let ((width (reduce 'max
+                               (map 'vector (lambda (entry)
+                                              (+ (ui-text-width (string (help-string entry)))
+                                                 (ui-text-width (key-binding-string (key-binding entry)))
+                                                 30
+                                                 (* 2 *ui-default-spacing*)))
+                                    (entries table)))))
+            (loop for entry across (entries table)
+                  do (let ((tmp entry)) ;TODO -- without this all entries get fn of last entry???
+                       (vector-push-extend
+                        (make-instance 'ui-menu-item :ui-w width
+                                                     :ui-h *ui-button-item-height*
+                                                     :text (string (help-string entry))
+                                                     :key-text (key-binding-string (key-binding entry))
+                                                     :is-active? t
+                                                     :help-string (format nil "Mouse: ~a. TAB: hide menu."
+                                                                          (string (help-string entry)))
+                                                     :on-click-fn (lambda (modifiers)
+                                                                    (declare (ignore modifiers))
+                                                                    (funcall (command-fn tmp))))
+                        (children view))))))))
+    (update-layout view)))
 
 ;;;; TODO xxx
 ;;-- context menu
@@ -624,23 +641,24 @@
    :layout :vertical))
 
 (defmethod create-contents ((view ui-sequence-viewer))
-  (setf (fill-pointer (children view)) 0)
-  (let ((data (data view)))
-    (when data
-      (loop for entry across (coerce data 'vector)
-            do (let ((tmp entry) ; TODO -- necessary otherwise all on-click-fn's use final entry???
-                     (text (format nil "~s" entry)))
-                 (vector-push-extend
-                  (make-instance 'ui-data-item :ui-w (+ (ui-text-width text) (* 4 *ui-default-spacing*))
-                                               :ui-h *ui-button-item-height* 
-                                               :data entry
-                                               :text text
-                                               :is-active? t
-                                               :on-click-fn (lambda (modifiers)
-                                                              (declare (ignore modifiers))
-                                                              (show-ui-content (make-ui-inspector tmp))))
-                  (children view))))))
-  (update-layout view))
+  (with-app-globals (*app*)
+    (setf (fill-pointer (children view)) 0)
+    (let ((data (data view)))
+      (when data
+        (loop for entry across (coerce data 'vector)
+              do (let ((tmp entry) ; TODO -- necessary otherwise all on-click-fn's use final entry???
+                       (text (format nil "~s" entry)))
+                   (vector-push-extend
+                    (make-instance 'ui-data-item :ui-w (+ (ui-text-width text) (* 4 *ui-default-spacing*))
+                                                 :ui-h *ui-button-item-height*
+                                                 :data entry
+                                                 :text text
+                                                 :is-active? t
+                                                 :on-click-fn (lambda (modifiers)
+                                                                (declare (ignore modifiers))
+                                                                (show-ui-content (make-ui-inspector tmp))))
+                    (children view))))))
+    (update-layout view)))
 
 ;;;; ui-outliner-item ==========================================================
 
@@ -696,36 +714,37 @@
     (resize-contents (ui-parent view))))
 
 (defmethod add-parent-contents ((view ui-outliner-item) &key (recurse? nil))
-  (let ((i (position view (children (ui-parent view))))
-        (children (children (data view))))
-    (dotimes (j (min 10 (length children)))
-      ;; TODO -- cap num children entries to 10 to avoid text engine overflow
-      ;; clipping does not work in all cases -- looks like outliner-view draw gets called without
-      ;; update-layout being called -- maybe due to text render threading?
-      ;; happens when shapes inspector is open and point-instancer-group demo in demo-misc.lisp
-      ;; is run
-      (let* ((child (aref children j))
-             (text (format nil "~a" (printable-data child)))
-             (item (make-instance (outliner-item-class (ui-parent view))
-                                  :ui-w (+ (ui-text-width text)
-                                           (* 4 *ui-default-spacing*)
-                                           (+ 20 (text-padding view)))
-                                  :ui-h *ui-button-item-height*
-                                  :bg-color (if (is-selected? child)
-                                                (c! 0.8 0.2 0.2 0.5)
-                                                (c! 0 0 0 0))
-                                  :text-padding (+ 20 (text-padding view))
-                                  :data child
-                                  :text text
-                                  :is-active? t
-                                  :help-string (format nil "Mouse: select ~a" ;, [ALT] show/hide children"
-                                                       (name child)))))
-        (ui-add-child-at (ui-parent view) item (incf i))
-        (add-outliner-child view item))))
-  (when recurse?
-    (dolist (item (outliner-children view))
-      (when (and (has-children-method? (data item)) (show-children? item))
-      (add-parent-contents item :recurse? recurse?)))))
+  (with-app-globals (*app*)
+    (let ((i (position view (children (ui-parent view))))
+          (children (children (data view))))
+      (dotimes (j (min 10 (length children)))
+        ;; TODO -- cap num children entries to 10 to avoid text engine overflow
+        ;; clipping does not work in all cases -- looks like outliner-view draw gets called without
+        ;; update-layout being called -- maybe due to text render threading?
+        ;; happens when shapes inspector is open and point-instancer-group demo in demo-misc.lisp
+        ;; is run
+        (let* ((child (aref children j))
+               (text (format nil "~a" (printable-data child)))
+               (item (make-instance (outliner-item-class (ui-parent view))
+                                    :ui-w (+ (ui-text-width text)
+                                             (* 4 *ui-default-spacing*)
+                                             (+ 20 (text-padding view)))
+                                    :ui-h *ui-button-item-height*
+                                    :bg-color (if (is-selected? child)
+                                                  (c! 0.8 0.2 0.2 0.5)
+                                                  (c! 0 0 0 0))
+                                    :text-padding (+ 20 (text-padding view))
+                                    :data child
+                                    :text text
+                                    :is-active? t
+                                    :help-string (format nil "Mouse: select ~a" ;, [ALT] show/hide children"
+                                                         (name child)))))
+          (ui-add-child-at (ui-parent view) item (incf i))
+          (add-outliner-child view item))))
+    (when recurse?
+      (dolist (item (outliner-children view))
+        (when (and (has-children-method? (data item)) (show-children? item))
+          (add-parent-contents item :recurse? recurse?))))))
 
 (defmethod remove-parent-contents ((view ui-outliner-item))
   (loop for child in (outliner-children view)
@@ -774,30 +793,31 @@
   ;; TODO -- this means the outliner does not reflect scene changes (add/delete items)
   ;; (when (> (length (children view)) 0)
   ;;   (return-from create-contents view))
-  (setf (fill-pointer (children view)) 0)
-  (let ((data (viewer-data view)))
-    (when data
-      (loop for entry across (coerce data 'vector)
-            do (let* (;(tmp entry) ; TODO -- necessary otherwise all on-click-fn's use final entry???
-                      (text (format nil "~a" (printable-data entry)))
-                      (item (make-instance (outliner-item-class view)
-                                           :ui-h *ui-button-item-height*
-                                           :bg-color (if (is-selected? entry)
-                                                         (c! 0.8 0.2 0.2 0.5)
-                                                         (c! 0 0 0 0))
-                                           :data entry
-                                           :text text
-                                           :is-active? t
-                                           :help-string (format nil "Mouse: select ~a" ;, [alt] show/hide children" ; not implemented yet
-                                                                (name entry)))))
-                 (setf (ui-w item)
-                       (+ (ui-text-width (outliner-item-text item)) (* 4 *ui-default-spacing*)))
-                 (ui-add-child view item)
-                 ;; show children if any
-                 (when (and (has-children-method? (data item)) (show-children? item))
-                   (add-parent-contents item :recurse? t))))))
-  (update-layout view)
-  (resize-contents view))
+  (with-app-globals (*app*)
+    (setf (fill-pointer (children view)) 0)
+    (let ((data (viewer-data view)))
+      (when data
+        (loop for entry across (coerce data 'vector)
+              do (let* ( ;(tmp entry) ; TODO -- necessary otherwise all on-click-fn's use final entry???
+                        (text (format nil "~a" (printable-data entry)))
+                        (item (make-instance (outliner-item-class view)
+                                             :ui-h *ui-button-item-height*
+                                             :bg-color (if (is-selected? entry)
+                                                           (c! 0.8 0.2 0.2 0.5)
+                                                           (c! 0 0 0 0))
+                                             :data entry
+                                             :text text
+                                             :is-active? t
+                                             :help-string (format nil "Mouse: select ~a" ;, [alt] show/hide children" ; not implemented yet
+                                                                  (name entry)))))
+                   (setf (ui-w item)
+                         (+ (ui-text-width (outliner-item-text item)) (* 4 *ui-default-spacing*)))
+                   (ui-add-child view item)
+                   ;; show children if any
+                   (when (and (has-children-method? (data item)) (show-children? item))
+                     (add-parent-contents item :recurse? t))))))
+    (update-layout view)
+    (resize-contents view)))
 
 (defmethod resize-contents ((view ui-outliner-viewer))
   (when (eq :vertical (layout view))
@@ -829,47 +849,48 @@
 ;;;; TODO -- SBCL inspect limits display of sequences to 10 items
 
 (defmethod create-contents ((view ui-inspector))
-  (setf (fill-pointer (children view)) 0)
-  (multiple-value-bind (description named-p elements)
-      (sb-impl::inspected-parts (obj view))
-    (setf (title view) (ui-cleanup-inspector-string description))
-    (setf (data view) (if (typep elements 'sequence)
-                          (coerce elements 'vector)
-                          (vector (obj view))))
-    (loop for entry across (data view)
-          for i from 0
-          ;; TODO -- tmp necessary otherwise all on-click-fn's use final entry???
-          do (let* ((tmp entry)
-                    (text (ui-cleanup-inspector-string
-                           (cond ((and named-p
-                                       (typep (cdr tmp) 'sequence)
-                                       (> (length (cdr tmp)) 1)
-                                       (not (typep (cdr tmp) '(simple-array single-float (3))))) ;POINT
-                                  (format nil "~a: ~s..." (car tmp) (elt (cdr tmp) 0)))
-                                 (named-p
-                                  (format nil "~a: ~s" (car tmp) (cdr tmp)))
-                                 ((> (length (data view)) 1)
-                                  (format nil "~a: ~s" i tmp))
-                                 (t
-                                  (format nil "~s" tmp)))))
-                    (datum (if named-p (cdr tmp) tmp)))
+  (with-app-globals (*app*)
+    (setf (fill-pointer (children view)) 0)
+    (multiple-value-bind (description named-p elements)
+        (sb-impl::inspected-parts (obj view))
+      (setf (title view) (ui-cleanup-inspector-string description))
+      (setf (data view) (if (typep elements 'sequence)
+                            (coerce elements 'vector)
+                            (vector (obj view))))
+      (loop for entry across (data view)
+            for i from 0
+            ;; TODO -- tmp necessary otherwise all on-click-fn's use final entry???
+            do (let* ((tmp entry)
+                      (text (ui-cleanup-inspector-string
+                             (cond ((and named-p
+                                         (typep (cdr tmp) 'sequence)
+                                         (> (length (cdr tmp)) 1)
+                                         (not (typep (cdr tmp) '(simple-array single-float (3))))) ;POINT
+                                    (format nil "~a: ~s..." (car tmp) (elt (cdr tmp) 0)))
+                                   (named-p
+                                    (format nil "~a: ~s" (car tmp) (cdr tmp)))
+                                   ((> (length (data view)) 1)
+                                    (format nil "~a: ~s" i tmp))
+                                   (t
+                                    (format nil "~s" tmp)))))
+                      (datum (if named-p (cdr tmp) tmp)))
 
 ;;;               (print (list (type-of (cdr tmp)) (format nil "~s" (cdr tmp))))
 
-               (vector-push-extend
-                (make-instance 'ui-data-item :ui-w (+ (ui-text-width text) (* 4 *ui-default-spacing*))
-                                             :ui-h *ui-button-item-height* 
-                                             :data datum
-                                             :text text
-                                             :is-active? t
-                                             :help-string (format nil "Mouse: inspect ~a. UP/DN-ARROW: scroll inspectors. ESC: close inspectors, SHIFT-L-ARROW: close last inspector."
-                                                                  (ui-cleanup-inspector-string
-                                                                   (format nil "~a" datum)))
-                                             :on-click-fn (lambda (modifiers)
-                                                            (declare (ignore modifiers))
-                                                            (show-ui-content (make-ui-inspector (if named-p (cdr tmp) tmp)))))
-                (children view))))
-    (update-layout view)))
+                 (vector-push-extend
+                  (make-instance 'ui-data-item :ui-w (+ (ui-text-width text) (* 4 *ui-default-spacing*))
+                                               :ui-h *ui-button-item-height*
+                                               :data datum
+                                               :text text
+                                               :is-active? t
+                                               :help-string (format nil "Mouse: inspect ~a. UP/DN-ARROW: scroll inspectors. ESC: close inspectors, SHIFT-L-ARROW: close last inspector."
+                                                                    (ui-cleanup-inspector-string
+                                                                     (format nil "~a" datum)))
+                                               :on-click-fn (lambda (modifiers)
+                                                              (declare (ignore modifiers))
+                                                              (show-ui-content (make-ui-inspector (if named-p (cdr tmp) tmp)))))
+                  (children view))))
+      (update-layout view))))
 
 (defun make-ui-inspector (obj)
   (create-contents (make-instance 'ui-inspector :ui-x 20 :ui-y 20 :obj obj)))
@@ -891,8 +912,9 @@
            (< x-hi (ui-x      *ui-clip-rect*))
            (> y-lo (ui-bottom *ui-clip-rect*))
            (< y-hi (ui-y      *ui-clip-rect*)))))
-         
-(defun draw-line (x1 y1 x2 y2 &optional (line-width *ui-border-width*))
+
+#-krma
+(defun draw-line (x1 y1 x2 y2 &optional (line-width (ui-border-width *app*)))
   (when (not (ui-is-clipped? x1 y1 x2 y2))
     (gl:line-width line-width)
     (gl:begin :lines)
@@ -900,6 +922,12 @@
     (gl:vertex x2 y2)
     (gl:end)))
 
+#+krma
+(defun draw-line (x1 y1 x2 y2 &optional (line-width (ui-border-width *app*)))
+  (with-app-globals (*app*)
+    (krma:scene-draw-2d-line *scene* line-width (fg-color *drawing-settings*) x1 y1 x2 y2)))
+
+#-krma
 (defun draw-rect-fill (x y w h &optional (inset 0.0))
   (when (not (ui-is-clipped? x y (+ x w) (+ y h)))
     (gl:polygon-mode :front-and-back :fill)
@@ -910,8 +938,25 @@
     (gl:vertex    (+ x inset)    (- (+ y h) inset))
     (gl:end)))
 
+#+krma
+(defun draw-rect-fill (x y w h &optional (inset 0.0))
+  (with-app-globals (*app*)
+    (when (not (ui-is-clipped? x y (+ x w) (+ y h)))
+      (krma:scene-draw-filled-2d-rectangle-list
+       *scene*
+       (fg-color *drawing-settings*)
+       (list       x             (+ y inset)
+                (+ x w)           (+ y inset)
+                   x           (- (+ y h) inset)
+                (+ x w)        (- (+ y h) inset)
+             (- (+ x w) inset)    (+ y inset)
+             (- (+ x w) inset) (- (+ y h) inset)
+                (+ x inset)       (+ y inset)
+                (+ x inset)    (- (+ y h) inset))))))
+
 ;; draw as lines so corners look clean
-(defun draw-rect-border (x y w h &optional (inset 0.0) (line-width *ui-border-width*))
+#-krma
+(defun draw-rect-border (x y w h &optional (inset 0.0) (line-width (ui-border-width *app*)))
   (when (not (ui-is-clipped? x y (+ x w) (+ y h)))
     (gl:line-width line-width)
     (gl:begin :lines)
@@ -925,7 +970,19 @@
     (gl:vertex    (+ x inset)    (- (+ y h) inset))
     (gl:end)))
 
-(defun draw-rect-x-mark (x y w h &optional (inset 0.0) (line-width *ui-border-width*))
+#+krma
+(defun draw-rect-border (x y w h &optional (inset 0.0) (line-width (ui-border-width *app*)))
+  (with-app-globals (*app*)
+    (when (not (ui-is-clipped? x y (+ x w) (+ y h)))
+      (let ((color (fg-color *drawing-settings*)))
+        (krma:scene-draw-2d-line *scene* line-width color       x              (+ y inset)       (+ x w)              (+ y inset))
+        (krma:scene-draw-2d-line *scene* line-width color       x           (- (+ y h) inset)    (+ x w)           (- (+ y h) inset))
+        (krma:scene-draw-2d-line *scene* line-width color (- (+ x w) inset)    (+ y inset)       (- (+ x w) inset)    (+ y inset))
+        (krma:scene-draw-2d-line *scene* line-width color    (+ x inset)       (+ y inset)          (+ x inset)       (+ y inset))))))
+
+
+#-krma
+(defun draw-rect-x-mark (x y w h &optional (inset 0.0) (line-width (ui-border-width *app*)))
   (when (not (ui-is-clipped? x y (+ x w) (+ y h)))
     (gl:line-width line-width)
     (gl:begin :lines)
@@ -935,50 +992,111 @@
     (gl:vertex (- (+ x w) inset)    (+ y inset))
     (gl:end)))
 
+#+krma
+(defun draw-rect-x-mark (x y w h &optional (inset 0.0) (line-width (ui-border-width *app*)))
+  (with-app-globals (*app*)
+    (when (not (ui-is-clipped? x y (+ x w) (+ y h)))
+      (let ((color (fg-color *drawing-settings*)))
+        (krma:scene-draw-2d-line *scene* line-width color (+ x inset)       (+ y inset)    (- (+ x w) inset) (- (+ y h) inset))
+        (krma:scene-draw-2d-line *scene* line-width color (+ x inset)    (- (+ y h) inset) (- (+ x w) inset)    (+ y inset))))))
+
+#-krma
 (defun draw-cursor (x y)
-  (let ((x0 (- x 3))
-        (x1 (+ x 2))
-        (y0 (+ y 3))
-        (y1 (- (+ y *ui-button-item-height*) 4)))
-    (when (not (ui-is-clipped? x0 y0 x1 y1))
-      (gl:line-width *ui-border-width*)
-      (gl:begin :lines)
-      (gl:vertex x y0)
-      (gl:vertex x y1)
-      (gl:vertex x0 y0)
-      (gl:vertex x1 y0)
-      (gl:vertex x0 y1)
-      (gl:vertex x1 y1)
-      (gl:end))))
+  (with-app-globals (*app*)
+    (let ((x0 (- x 3))
+          (x1 (+ x 2))
+          (y0 (+ y 3))
+          (y1 (- (+ y *ui-button-item-height*) 4)))
+      (when (not (ui-is-clipped? x0 y0 x1 y1))
+        (gl:line-width *ui-border-width*)
+        (gl:begin :lines)
+        (gl:vertex x y0)
+        (gl:vertex x y1)
+        (gl:vertex x0 y0)
+        (gl:vertex x1 y0)
+        (gl:vertex x0 y1)
+        (gl:vertex x1 y1)
+        (gl:end)))))
 
+#+krma
+(defun draw-cursor (x y)
+  (with-app-globals (*app*)
+    (let ((x0 (- x 3))
+          (x1 (+ x 2))
+          (y0 (+ y 3))
+          (y1 (- (+ y *ui-button-item-height*) 4)))
+      (when (not (ui-is-clipped? x0 y0 x1 y1))
+        (let ((line-width *ui-border-width*)
+              (color (fg-color *drawing-settings*)))
+          (krma:scene-draw-2d-line *scene* line-width color x  y0 x  y1)
+          (krma:scene-draw-2d-line *scene* line-width color x0 y0 x1 y0)
+          (krma:scene-draw-2d-line *scene* line-width color x0 y1 x1 y1))))))
+
+#-krma
 (defmethod draw-title-bar ((view ui-group) x-offset y-offset)
-  (gl:color 0.4 0.4 0.4 0.8)
-  (with-accessors ((fg fg-color) (x ui-x) (y ui-y) (w ui-w))
-      view
-    ;; fill
-    (draw-rect-fill (+ x x-offset) (+ y y-offset) w *ui-button-item-height*)
-    ;; border
-    (gl:color (c-red fg) (c-green fg) (c-blue fg) (c-alpha fg))
-    (draw-rect-border (+ x x-offset) (+ y y-offset) w *ui-button-item-height*)
-    ;; title
-    (render-text (+ (ui-centered-text-x (title view) w) x x-offset)
-                 (+ 16 y y-offset) (title view) :color #xffffffff)))
+  (with-app-globals (*app*)
+    (gl:color 0.4 0.4 0.4 0.8)
+    (with-accessors ((fg fg-color) (x ui-x) (y ui-y) (w ui-w))
+        view
+      ;; fill
+      (draw-rect-fill (+ x x-offset) (+ y y-offset) w *ui-button-item-height*)
+      ;; border
+      (gl:color (c-red fg) (c-green fg) (c-blue fg) (c-alpha fg))
+      (draw-rect-border (+ x x-offset) (+ y y-offset) w *ui-button-item-height*)
+      ;; title
+      (render-text (+ (ui-centered-text-x (title view) w) x x-offset)
+                   (+ 16 y y-offset) (title view) :color #xffffffff))))
 
-  
+#+krma
+(defmethod draw-title-bar ((view ui-group) x-offset y-offset)
+  (with-app-globals (*app*)
+    (let ((color (c! 0.4 0.4 0.4 0.8)))
+      (setf (fg-color *drawing-settings*) color)
+      (with-accessors ((fg fg-color) (x ui-x) (y ui-y) (w ui-w))
+          view
+        ;; fill
+        (draw-rect-fill (+ x x-offset) (+ y y-offset) w *ui-button-item-height*)
+        ;; border
+        (setf (fg-color *drawing-settings*) (c! (c-red fg) (c-green fg) (c-blue fg) (c-alpha fg)))
+
+        (draw-rect-border (+ x x-offset) (+ y y-offset) w *ui-button-item-height*)
+        ;; title
+        (render-text (+ (ui-centered-text-x (title view) w) x x-offset)
+                     (+ 16 y y-offset) (title view) :color #xffffffff)))))
+
+#-krma
 (defmethod draw-ui-view ((view ui-view) x-offset y-offset)
-  (with-accessors ((bg bg-color) (fg fg-color) (x ui-x) (y ui-y) (w ui-w) (h ui-h))
-      view
-    ;; fill
-    (when (> (c-alpha bg) 0)
-      (gl:color (c-red bg) (c-green bg) (c-blue bg) (c-alpha bg))
-      (draw-rect-fill (+ x x-offset) (+ y y-offset) w h))
-    ;; border
-    (when (or (draw-border? view) (highlight? view)) ;draw border if highlighted
-      (let ((line-width (if (highlight? view) *ui-highlight-border-width* *ui-border-width*)))
-        (gl:color (c-red fg) (c-green fg) (c-blue fg) (c-alpha fg))
-        (draw-rect-border (+ x x-offset) (+ y y-offset) w h
-                          (if (> line-width 1) (* 0.5 line-width) 0)
-                          line-width)))))
+  (with-app-globals (*app*)
+    (with-accessors ((bg bg-color) (fg fg-color) (x ui-x) (y ui-y) (w ui-w) (h ui-h))
+        view
+      ;; fill
+      (when (> (c-alpha bg) 0)
+        (gl:color (c-red bg) (c-green bg) (c-blue bg) (c-alpha bg))
+        (draw-rect-fill (+ x x-offset) (+ y y-offset) w h))
+      ;; border
+      (when (or (draw-border? view) (highlight? view)) ;draw border if highlighted
+        (let ((line-width (if (highlight? view) *ui-highlight-border-width* *ui-border-width*)))
+          (gl:color (c-red fg) (c-green fg) (c-blue fg) (c-alpha fg))
+          (draw-rect-border (+ x x-offset) (+ y y-offset) w h
+                            (if (> line-width 1) (* 0.5 line-width) 0)
+                            line-width))))))
+
+#+krma
+(defmethod draw-ui-view ((view ui-view) x-offset y-offset)
+  (with-app-globals (*app*)
+    (with-accessors ((bg bg-color) (fg fg-color) (x ui-x) (y ui-y) (w ui-w) (h ui-h))
+        view
+      ;; fill
+      (when (> (c-alpha bg) 0)
+        (setf (fg-color *drawing-settings*)(c! (c-red bg) (c-green bg) (c-blue bg) (c-alpha bg)))
+        (draw-rect-fill (+ x x-offset) (+ y y-offset) w h))
+      ;; border
+      (when (or (draw-border? view) (highlight? view)) ;draw border if highlighted
+        (let ((line-width (if (highlight? view) *ui-highlight-border-width* *ui-border-width*)))
+          (setf (fg-color *drawing-settings*) (c! (c-red fg) (c-green fg) (c-blue fg) (c-alpha fg)))
+          (draw-rect-border (+ x x-offset) (+ y y-offset) w h
+                            (if (> line-width 1) (* 0.5 line-width) 0)
+                            line-width))))))
   
 (defgeneric draw-view (view x-offset y-offset)
 
@@ -996,7 +1114,7 @@
   (:method ((view ui-outliner-item) x-offset y-offset)
     (when (is-visible? view)
 
-;      (print (list view (text view) x-offset y-offset))
+                                        ;      (print (list view (text view) x-offset y-offset))
       
       (draw-ui-view view x-offset y-offset)
       (with-accessors ((x ui-x) (y ui-y))
@@ -1021,33 +1139,55 @@
         (render-text (+ 30 x x-offset) (+ 16 y y-offset) (text view)))))
 
   (:method ((view ui-check-box-item) x-offset y-offset)
-    (when (is-visible? view)
-      (draw-ui-view view x-offset y-offset)
-      (with-accessors ((x ui-x) (y ui-y) (cbg check-bg-color) (fg fg-color))
-          view
-        (render-text (+ 30 x x-offset) (+ 16 y y-offset) (text view))
-        (when (> (c-alpha cbg) 0)
-          (gl:color (c-red cbg) (c-green cbg) (c-blue cbg) (c-alpha cbg))
-          (draw-rect-fill (+ x x-offset 4) (+ y y-offset 4)
-                          (- *ui-button-item-height* 8) (- *ui-button-item-height* 8)))
-        (gl:color (c-red fg) (c-green fg) (c-blue fg) (c-alpha fg))
-        (draw-rect-border (+ x x-offset 4) (+ y y-offset 4)
-                          (- *ui-button-item-height* 8) (- *ui-button-item-height* 8))
-        (when (is-pushed? view)
-          (draw-rect-x-mark (+ x x-offset 4) (+ y y-offset 4)
-                            (- *ui-button-item-height* 9) (- *ui-button-item-height* 8)
-                            0 (* 2 *ui-border-width*))))))
+    #-krma
+    (with-app-globals (*app*)
+      (when (is-visible? view)
+        (draw-ui-view view x-offset y-offset)
+        (with-accessors ((x ui-x) (y ui-y) (cbg check-bg-color) (fg fg-color))
+            view
+          (render-text (+ 30 x x-offset) (+ 16 y y-offset) (text view))
+          (when (> (c-alpha cbg) 0)
+            (gl:color (c-red cbg) (c-green cbg) (c-blue cbg) (c-alpha cbg))
+            (draw-rect-fill (+ x x-offset 4) (+ y y-offset 4)
+                            (- *ui-button-item-height* 8) (- *ui-button-item-height* 8)))
+          (gl:color (c-red fg) (c-green fg) (c-blue fg) (c-alpha fg))
+          (draw-rect-border (+ x x-offset 4) (+ y y-offset 4)
+                            (- *ui-button-item-height* 8) (- *ui-button-item-height* 8))
+          (when (is-pushed? view)
+            (draw-rect-x-mark (+ x x-offset 4) (+ y y-offset 4)
+                              (- *ui-button-item-height* 9) (- *ui-button-item-height* 8)
+                              0 (* 2 *ui-border-width*))))))
+
+    #+krma
+    (with-app-globals (*app*)
+      (when (is-visible? view)
+        (draw-ui-view view x-offset y-offset)
+        (with-accessors ((x ui-x) (y ui-y) (cbg check-bg-color) (fg fg-color))
+            view
+          (render-text (+ 30 x x-offset) (+ 16 y y-offset) (text view))
+          (when (> (c-alpha cbg) 0)
+            (setf (fg-color *drawing-settings*) (c! (c-red cbg) (c-green cbg) (c-blue cbg) (c-alpha cbg)))
+            (draw-rect-fill (+ x x-offset 4) (+ y y-offset 4)
+                            (- *ui-button-item-height* 8) (- *ui-button-item-height* 8)))
+          (setf (fg-color *drawing-settings*) (c! (c-red fg) (c-green fg) (c-blue fg) (c-alpha fg)))
+          (draw-rect-border (+ x x-offset 4) (+ y y-offset 4)
+                            (- *ui-button-item-height* 8) (- *ui-button-item-height* 8))
+          (when (is-pushed? view)
+            (draw-rect-x-mark (+ x x-offset 4) (+ y y-offset 4)
+                              (- *ui-button-item-height* 9) (- *ui-button-item-height* 8)
+                              0 (* 2 *ui-border-width*)))))))
 
   (:method ((view ui-text-box-item) x-offset y-offset)
-    (when (is-visible? view)
-      (draw-ui-view view x-offset y-offset)
-      (with-accessors ((x ui-x) (y ui-y))
-          view
-        (let ((local-x (+ 5 x x-offset))
-              (local-y (+ y y-offset)))
-          (render-text local-x (+ 16 local-y) (text view))
-          (when (eq view *ui-keyboard-focus*)
-            (draw-cursor (+ local-x (* *ui-font-width* (cursor-position view))) local-y))))))
+    (with-app-globals (*app*)
+      (when (is-visible? view)
+        (draw-ui-view view x-offset y-offset)
+        (with-accessors ((x ui-x) (y ui-y))
+            view
+          (let ((local-x (+ 5 x x-offset))
+                (local-y (+ y y-offset)))
+            (render-text local-x (+ 16 local-y) (text view))
+            (when (eq view *ui-keyboard-focus*)
+              (draw-cursor (+ local-x (* *ui-font-width* (cursor-position view))) local-y)))))))
 
   (:method :after ((view ui-group) x-offset y-offset)
     (when (is-visible? view)

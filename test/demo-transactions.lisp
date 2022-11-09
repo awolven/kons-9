@@ -171,7 +171,7 @@
   (setf (scene *default-scene-view*) *scene*))
 
 (defun do-test-1 ()
-  (let ((scene (make-instance 'scene))
+  (let ((scene (make-instance (scened-class *app*)))
         (p-cloud (make-point-cloud (make-grid-points 4 2 5 (p! -2.0 -0.4 -1.0) (p! 2.0 0.4 1.0))))
         (polyh (make-cut-cube 2.0)))
     (execute 'add-shape scene p-cloud)

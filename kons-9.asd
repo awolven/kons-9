@@ -19,10 +19,12 @@
    #:zpb-ttf                            ;for font libraries
    #:cl-vectors                         ;for font libraries
    #:origin
-   #:clobber) 
+   #:clobber
+   #:krma)
   :serial t
   :components
   ((:file "src/package")
+   (:file "src/kernel/main")
    ;; utils & math
    (:file "src/kernel/utils")
    (:file "src/kernel/color")
@@ -55,14 +57,14 @@
    (:file "src/kernel/scene-duplicate")
    (:file "src/kernel/protocol")
    (:file "src/kernel/clobber")
-   (:file "src/kernel/main")
+
    ;; font libraries -- tmp until we use 3b-bmfont
-   (:module "lib/JMC-font-libs/font-master"
+   #+NIL(:module "lib/JMC-font-libs/font-master"
     :components ((:file "glyph")
                  (:file "font")
                  (:file "glyph-doc")
                  (:file "documentation")))
-   (:module "lib/JMC-font-libs/font-zpb-ttf-master"
+   #+NIL(:module "lib/JMC-font-libs/font-zpb-ttf-master"
     :depends-on ("lib/JMC-font-libs/font-master") ; #:zpb-ttf "cl-vectors")
     :components ((:file "package")
                  (:file "glyph-zpb-ttf")
@@ -71,10 +73,10 @@
    (:file "src/graphics/glfw/command-table")
    (:file "src/graphics/glfw/application-widgets")
    (:file "src/graphics/glfw/glfw-gui")
-   (:file "src/graphics/opengl/text-common")
-   (:file "src/graphics/opengl/text-opengl-common")
+   ;;(:file "src/graphics/opengl/text-common")
+   ;;(:file "src/graphics/opengl/text-opengl-common")
    #+darwin(:file "src/graphics/opengl/opengl2-text")
-   #-darwin(:file "src/graphics/opengl/opengl3-text")
+   ;;#-darwin(:file "src/graphics/opengl/opengl3-text")
    ;; plugins
    (:file "src/plugins/parametric-curve")
    (:file "src/plugins/uv-mesh")
