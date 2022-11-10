@@ -6,7 +6,8 @@
   ((transform :accessor transform :initarg :transform :initform (make-instance 'euler-transform))
    (is-visible? :accessor is-visible? :initarg :is-visible? :initform t)
    (show-axis :accessor show-axis :initarg :show-axis :initform nil) ;nil or length
-   (show-bounds? :accessor show-bounds? :initarg :show-bounds? :initform nil)))
+   (show-bounds? :accessor show-bounds? :initarg :show-bounds? :initform nil)
+   #+krma(krma-group :accessor shape-krma-group :initform (intern (symbol-name (gensym)) :keyword))))
 
 ;;; utility methods for transforming shapes
 

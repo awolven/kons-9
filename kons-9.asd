@@ -15,9 +15,9 @@
    #:cl-opengl
    #:cl-glu
    #:cl-glfw3
-   #:cl-paths-ttf                       ;for font libraries
-   #:zpb-ttf                            ;for font libraries
-   #:cl-vectors                         ;for font libraries
+   #-krma #:cl-paths-ttf                       ;for font libraries
+   #-krma #:zpb-ttf                            ;for font libraries
+   #-krma #:cl-vectors                         ;for font libraries
    #:origin
    #:clobber
    #:krma)

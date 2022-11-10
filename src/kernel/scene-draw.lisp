@@ -14,9 +14,15 @@
 
   ;; push matrix and do transform operations before drawing
   (:method :before ((shape shape))
+    #+krma(krma::create-group-1 (krma:im-draw-data *scene*) (shape-krma-group shape))
     (when (is-visible? shape)
       (let ((xform (transform shape)))
         (3d-push-matrix (transform-matrix xform)))))
+
+  #+krma
+  (:method :after ((shape shape))
+    (let ((xform (transform shape)))
+      (krma:group-set-model-matrix-1 (krma:im-draw-data *scene*) (shape-krma-group shape) (transform-matrix-to-mat4 (transform-matrix xform)))))
 
   ;; draw a marker as a default
   (:method ((shape shape))
@@ -58,16 +64,17 @@
         (when (or (= 0 (length (points polyh)))
                   (= 0 (length (faces polyh))))
           (return-from draw))
-        (3d-setup-lighting)
-        (when *display-filled?*
-          (3d-draw-filled-polygons (points polyh) (faces polyh)
-                                   (face-normals polyh) (point-normals polyh) (point-colors polyh)))
-        (when *display-wireframe?*
-          (3d-draw-wireframe-polygons (points polyh) (faces polyh)))
-        (when *display-points?*
-          (draw-points polyh nil))
-        (when (show-normals polyh)
-          (draw-normals polyh)))))
+        (let ((group (shape-krma-group polyh)))
+          (3d-setup-lighting)
+          (when *display-filled?*
+            (3d-draw-filled-polygons (points polyh) (faces polyh)
+                                     (face-normals polyh) (point-normals polyh) (point-colors polyh) group))
+          (when *display-wireframe?*
+            (3d-draw-wireframe-polygons (points polyh) (faces polyh) :group group))
+          (when *display-points?*
+            (draw-points polyh nil))
+          (when (show-normals polyh)
+            (draw-normals polyh))))))
   )
 
 ;;; shape helper methods -------------------------------------------------------

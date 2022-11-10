@@ -147,9 +147,9 @@
   (with-app-globals (*app*)
     (let ((size (axes-size *drawing-settings*))
           (thickness (axes-thickness *drawing-settings*)))
-      (krma:draw-3d-line 0.0 0.001 0.0 size 0.001 0.0 :color #xff0000ff :line-thickness thickness)
-      (krma:draw-3d-line 0.0 0.0 0.0 0.0 size 0.0 :color #x00ff00ff :line-thickness thickness)
-      (krma:draw-3d-line 0.0 0.001 0.0 0.0 0.001 size :color #x0000ffff :line-thickness thickness))))
+      (krma:draw-3d-line 0.0 0.001 0.0 size 0.001 0.0 :color #xff0000ff :line-thickness thickness :group :axes)
+      (krma:draw-3d-line 0.0 0.0 0.0 0.0 size 0.0 :color #x00ff00ff :line-thickness thickness :group :axes)
+      (krma:draw-3d-line 0.0 0.001 0.0 0.0 0.001 size :color #x0000ffff :line-thickness thickness :group :axes))))
 
 
 #-krma
@@ -181,8 +181,8 @@
       (dotimes (i (1+ segs))
         (let* ((f (/ i segs))
                (coord (lerp f (- size) size)))
-          (krma:draw-3d-line coord 0.0 (- size) coord 0.0 size :line-thickness thick :color col)
-          (krma:draw-3d-line (- size) 0.0 coord size 0.0 coord :line-thickness thick :color col))))))
+          (krma:draw-3d-line coord 0.0 (- size) coord 0.0 size :line-thickness thick :color col :group :ground-plane)
+          (krma:draw-3d-line (- size) 0.0 coord size 0.0 coord :line-thickness thick :color col :group :ground-plane))))))
 
 ;;(defparameter *viewport-aspect-ratio* (/ 16.0 9.0))
 
@@ -371,12 +371,12 @@
     (gl:end)))
 
 #+krma
-(defun 3d-draw-marker (size &optional (scene *scene*))
+(defun 3d-draw-marker (size &optional (group :default))
   (with-app-globals (*app*)
     (let ((line-width (* 2 (line-thickness *scene*))))
-      (krma:scene-draw-3d-line scene #xffff00ff line-width size 0.0 0.0 (- size) 0.0 0.0)
-      (krma:scene-draw-3d-line scene #xffff00ff line-width 0.0 size 0.0 0.0 (- size) 0.0)
-      (krma:scene-draw-3d-line scene #xffff00ff line-width 0.0 0.0 size 0.0 0.0 (- size)))))
+      (krma:scene-draw-3d-line *scene* group #xffff00ff line-width size 0.0 0.0 (- size) 0.0 0.0)
+      (krma:scene-draw-3d-line *scene* group #xffff00ff line-width 0.0 size 0.0 0.0 (- size) 0.0)
+      (krma:scene-draw-3d-line *scene* group #xffff00ff line-width 0.0 0.0 size 0.0 0.0 (- size)))))
 
 #-krma
 (defun 3d-draw-axis (size)
@@ -399,12 +399,12 @@
       (gl:end))))
 
 #+krma
-(defun 3d-draw-axis (size &optional (scene *scene*))
+(defun 3d-draw-axis (size &optional (group :default))
   (with-app-globals (*app*)
 	(let ((line-width (line-thickness *drawing-settings*)))
-      (krma:scene-draw-3d-line scene #xff0000ff line-width 0.0f0 0.0f0 0.0f0 size 0.0f0 0.0f0)
-      (krma:scene-draw-3d-line scene #x00ff00ff line-width 0.0f0 0.0f0 0.0f0 0.0f0 size 0.0f0)
-      (krma:scene-draw-3d-line scene #x0000ffff line-width 0.0f0 0.0f0 0.0f0 0.0f0 0.0f0 size))))
+      (krma:scene-draw-3d-line *scene* group #xff0000ff line-width 0.0f0 0.0f0 0.0f0 size 0.0f0 0.0f0)
+      (krma:scene-draw-3d-line *scene* group #x00ff00ff line-width 0.0f0 0.0f0 0.0f0 0.0f0 size 0.0f0)
+      (krma:scene-draw-3d-line *scene* group #x0000ffff line-width 0.0f0 0.0f0 0.0f0 0.0f0 0.0f0 size))))
 
 #-krma
 (defun 3d-draw-bounds (lo hi color)
@@ -440,7 +440,7 @@
       (gl-set-color (shading-color *drawing-settings*)))))    ;reset color
 
 #+krma
-(defun 3d-draw-bounds (lo hi color &optional (scene *scene*))
+(defun 3d-draw-bounds (lo hi color &optional (group :default))
   (with-app-globals (*app*)
     (let ((line-width (* 2 (line-thickness *drawing-settings*))))
       (when (and lo hi)
@@ -451,20 +451,20 @@
 	          (y1 (p:y hi))
 	          (z1 (p:y hi)))
 
-	      (krma:scene-draw-3d-line scene color line-width x0 y0 x0 x1 y0 z0)
-	      (krma:scene-draw-3d-line scene color line-width x1 y0 z0 x1 y0 z1)
-	      (krma:scene-draw-3d-line scene color line-width x1 y0 z1 z0 y0 z1)
-	      (krma:scene-draw-3d-line scene color line-width x0 y0 z1 x0 y0 z0)
+	      (krma:scene-draw-3d-line *scene* group color line-width x0 y0 x0 x1 y0 z0)
+	      (krma:scene-draw-3d-line *scene* group color line-width x1 y0 z0 x1 y0 z1)
+	      (krma:scene-draw-3d-line *scene* group color line-width x1 y0 z1 z0 y0 z1)
+	      (krma:scene-draw-3d-line *scene* group color line-width x0 y0 z1 x0 y0 z0)
 
-	      (krma:scene-draw-3d-line scene color line-width x0 y1 z0 x1 y1 z0)
-	      (krma:scene-draw-3d-line scene color line-width x1 y1 z0 x1 y1 z1)
-	      (krma:scene-draw-3d-line scene color line-width x1 y1 z1 x0 y1 z1)
-	      (krma:scene-draw-3d-line scene color line-width x0 y1 z1 x0 y1 z0)
+	      (krma:scene-draw-3d-line *scene* group color line-width x0 y1 z0 x1 y1 z0)
+	      (krma:scene-draw-3d-line *scene* group color line-width x1 y1 z0 x1 y1 z1)
+	      (krma:scene-draw-3d-line *scene* group color line-width x1 y1 z1 x0 y1 z1)
+	      (krma:scene-draw-3d-line *scene* group color line-width x0 y1 z1 x0 y1 z0)
 
-	      (krma:scene-draw-3d-line scene color line-width x0 y0 z0 x0 y1 z0)
-	      (krma:scene-draw-3d-line scene color line-width x1 y0 z0 x1 y1 z0)
-	      (krma:scene-draw-3d-line scene color line-width x1 y0 z1 x1 y1 z1)
-	      (krma:scene-draw-3d-line scene color line-width x0 y0 z1 x0 y1 z1))))))
+	      (krma:scene-draw-3d-line *scene* group color line-width x0 y0 z0 x0 y1 z0)
+	      (krma:scene-draw-3d-line *scene* group color line-width x1 y0 z0 x1 y1 z0)
+	      (krma:scene-draw-3d-line *scene* group color line-width x1 y0 z1 x1 y1 z1)
+	      (krma:scene-draw-3d-line *scene* group color line-width x0 y0 z1 x0 y1 z1))))))
 
 #-krma
 (defun 3d-pop-matrix ()
@@ -486,11 +486,16 @@
     (gl:end)))
 
 #+krma
-(defun 3d-draw-curve (points is-closed? &optional (line-width (line-thickness (application-drawing-settings *app*))))
+(defun 3d-draw-curve (points is-closed? &optional (line-width (line-thickness (application-drawing-settings *app*))) (group :default))
   (with-app-globals (*app*)
-    (krma:scene-draw-3d-polyline *scene* is-closed? line-width
+    (krma:scene-draw-3d-polyline *scene* group is-closed? line-width
                                  (fg-color *drawing-settings*)
-                                 points)))
+                                 (loop for point across points
+                                       with res = ()
+                                       do (push (p:x point) res)
+                                          (push (p:y point) res)
+                                          (push (p:z point) res)
+                                       finally (return (nreverse res))))))
 
 
 #-krma
@@ -516,19 +521,19 @@
       (gl:end))))
 
 #+krma
-(defun 3d-draw-points (points point-colors &key (highlight? nil))
+(defun 3d-draw-points (points point-colors &key (highlight? nil) (group :default))
   (with-app-globals (*app*)
     (let ((scene *scene*)
           (point-size (point-size *drawing-settings*)))
       (cond (point-colors
 	         (do-array (i p points)
-		       (krma:scene-draw-3d-point scene point-size (aref point-colors i) (p:x p) (p:y p) (p:z p))))
+		       (krma:scene-draw-3d-point scene group point-size (aref point-colors i) (p:x p) (p:y p) (p:z p))))
 	        (t
 	         (let ((color (if highlight?
 			                  (sel-color *drawing-settings*)
 			                  (fg-color *drawing-settings*))))
 	           (do-array (i p points)
-		         (krma:scene-draw-3d-point scene point-size color (p:x p) (p:y p) (p:z p)))))))))
+		         (krma:scene-draw-3d-point scene group point-size color (p:x p) (p:y p) (p:z p)))))))))
 
 #-krma
 (defun 3d-draw-lines (points &key (highlight? nil))
@@ -548,7 +553,7 @@
       (gl:end))))
 
 #+krma
-(defun 3d-draw-lines (points &key (highlight? nil))
+(defun 3d-draw-lines (points &key (highlight? nil) (group :default))
   (with-app-globals (*app*)
     (let ((scene *scene*)
           (color (if highlight?
@@ -557,7 +562,7 @@
           (line-width (line-thickness *drawing-settings*)))
     
       (loop for (head tail) on points by #'cddr
-	        do (krma:scene-draw-3d-line scene color line-width
+	        do (krma:scene-draw-3d-line scene group color line-width
 				                        (p:x tail) (p:y tail) (p:z tail)
 				                        (p:x head) (p:y head) (p:z head))))))
     
@@ -586,8 +591,8 @@
         (3d-draw-filled-polygons-aux points faces face-normals point-normals point-colors)))))
 
 #+krma
-(defun 3d-draw-filled-polygons (points faces face-normals point-normals point-colors)
-  (3d-draw-filled-polygons-aux points faces face-normals point-normals point-colors))
+(defun 3d-draw-filled-polygons (points faces face-normals point-normals point-colors &optional (group :default))
+  (3d-draw-filled-polygons-aux points faces face-normals point-normals point-colors group))
 
 #-krma
 (defun 3d-draw-filled-polygons-aux (points faces face-normals point-normals point-colors)
@@ -644,7 +649,7 @@
                    (gl:end)))))))))
 
 #+krma
-(defun 3d-draw-filled-polygons-aux (points faces face-normals point-normals point-colors)
+(defun 3d-draw-filled-polygons-aux (points faces face-normals point-normals point-colors group)
   (declare (ignore face-normals)) ;; face normal is computed by fragment shader (flat shading)
   (with-app-globals (*app*)
     (with-scene-globals (*scene*)
@@ -663,7 +668,7 @@
 		               (push (p:y n) vertices)
 		               (push (p:z n) vertices)
 		               (push c vertices)))
-	               (krma:scene-draw-multicolor-3d-convex-polygon-diffuse *scene* (nreverse vertices)))))
+	               (krma:scene-draw-multicolor-3d-convex-polygon-diffuse *scene* group (nreverse vertices)))))
 	          ((> (length point-colors) 0)
 	           (dotimes (f (length faces))
 	             (let ((vertices ()))
@@ -674,7 +679,7 @@
 		               (push (p:y p) vertices)
 		               (push (p:z p) vertices)
 		               (push c vertices)))
-	               (krma:scene-draw-multicolor-3d-convex-polygon-flat *scene* (nreverse vertices)))))
+	               (krma:scene-draw-multicolor-3d-convex-polygon-flat *scene* group (nreverse vertices)))))
 	          (*do-smooth-shading?*
 	           (dotimes (f (length faces))
 	             (let ((vertices ()))
@@ -688,7 +693,7 @@
 		               (push (p:y n) vertices)
 		               (push (p:z n) vertices)
 		               ))
-	               (krma:scene-draw-filled-3d-convex-polygon-diffuse *scene* col (nreverse vertices)))))
+	               (krma:scene-draw-filled-3d-convex-polygon-diffuse *scene* group col (nreverse vertices)))))
 	          (t
 	           (dotimes (f (length faces))
 	             (let ((vertices ()))
@@ -697,7 +702,7 @@
 		               (push (p:x p) vertices)
 		               (push (p:y p) vertices)
 		               (push (p:z p) vertices)))
-	               (krma:scene-draw-filled-3d-convex-polygon-flat *scene* col (nreverse vertices))))))))))
+	               (krma:scene-draw-filled-3d-convex-polygon-flat *scene* group col (nreverse vertices))))))))))
 	 
 
 #-krma
@@ -775,7 +780,7 @@
       (gl:end))))
 
 #+krma
-(defun 3d-draw-wireframe-polygons (points faces &key (closed? t))
+(defun 3d-draw-wireframe-polygons (points faces &key (closed? t) (group :default))
   (with-app-globals (*app*)
     (let ((thickness 7 #+NIL(secondary-line-thickness *drawing-settings*))
           (color (fg-color *drawing-settings*)))
@@ -789,7 +794,7 @@
               (push x vertices)
               (push y vertices)
               (push z vertices)))
-          (krma:scene-draw-3d-polyline *scene* closed? thickness color (nreverse vertices)))))))
+          (krma:scene-draw-3d-polyline *scene* group closed? thickness color (nreverse vertices)))))))
 
 ;;; 2d display =================================================================
 #-krma

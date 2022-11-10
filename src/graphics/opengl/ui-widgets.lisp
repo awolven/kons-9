@@ -5,10 +5,10 @@
 
 (defparameter *ui-clip-rect* nil)
 
-(defun render-text (pos-x pos-y string &key (color #x000000ff))
+(defun render-text (pos-x pos-y string &key (color #x000000ff) (group :default))
   (when (not (stringp string))
     (setq string (princ-to-string string)))
-  (krma::draw-text string  pos-x (- pos-y 12.6) :color color))
+  (krma::draw-text string  pos-x (- pos-y 12.6) :color color :group group))
 
 ;;;; ui utils ==================================================================
 
@@ -923,9 +923,9 @@
     (gl:end)))
 
 #+krma
-(defun draw-line (x1 y1 x2 y2 &optional (line-width (ui-border-width *app*)))
+(defun draw-line (x1 y1 x2 y2 &optional (line-width (ui-border-width *app*)) (group :default))
   (with-app-globals (*app*)
-    (krma:scene-draw-2d-line *scene* line-width (fg-color *drawing-settings*) x1 y1 x2 y2)))
+    (krma:scene-draw-2d-line *scene* group line-width (fg-color *drawing-settings*) x1 y1 x2 y2)))
 
 #-krma
 (defun draw-rect-fill (x y w h &optional (inset 0.0))
@@ -939,11 +939,11 @@
     (gl:end)))
 
 #+krma
-(defun draw-rect-fill (x y w h &optional (inset 0.0))
+(defun draw-rect-fill (x y w h &optional (inset 0.0) (group :default))
   (with-app-globals (*app*)
     (when (not (ui-is-clipped? x y (+ x w) (+ y h)))
       (krma:scene-draw-filled-2d-rectangle-list
-       *scene*
+       *scene* group
        (fg-color *drawing-settings*)
        (list       x             (+ y inset)
                 (+ x w)           (+ y inset)
@@ -971,14 +971,14 @@
     (gl:end)))
 
 #+krma
-(defun draw-rect-border (x y w h &optional (inset 0.0) (line-width (ui-border-width *app*)))
+(defun draw-rect-border (x y w h &optional (inset 0.0) (line-width (ui-border-width *app*)) (group :default))
   (with-app-globals (*app*)
     (when (not (ui-is-clipped? x y (+ x w) (+ y h)))
       (let ((color (fg-color *drawing-settings*)))
-        (krma:scene-draw-2d-line *scene* line-width color       x              (+ y inset)       (+ x w)              (+ y inset))
-        (krma:scene-draw-2d-line *scene* line-width color       x           (- (+ y h) inset)    (+ x w)           (- (+ y h) inset))
-        (krma:scene-draw-2d-line *scene* line-width color (- (+ x w) inset)    (+ y inset)       (- (+ x w) inset)    (+ y inset))
-        (krma:scene-draw-2d-line *scene* line-width color    (+ x inset)       (+ y inset)          (+ x inset)       (+ y inset))))))
+        (krma:scene-draw-2d-line *scene* group line-width color       x              (+ y inset)       (+ x w)              (+ y inset))
+        (krma:scene-draw-2d-line *scene* group line-width color       x           (- (+ y h) inset)    (+ x w)           (- (+ y h) inset))
+        (krma:scene-draw-2d-line *scene* group line-width color (- (+ x w) inset)    (+ y inset)       (- (+ x w) inset)    (+ y inset))
+        (krma:scene-draw-2d-line *scene* group line-width color    (+ x inset)       (+ y inset)          (+ x inset)       (+ y inset))))))
 
 
 #-krma
@@ -993,12 +993,12 @@
     (gl:end)))
 
 #+krma
-(defun draw-rect-x-mark (x y w h &optional (inset 0.0) (line-width (ui-border-width *app*)))
+(defun draw-rect-x-mark (x y w h &optional (inset 0.0) (line-width (ui-border-width *app*)) (group :default))
   (with-app-globals (*app*)
     (when (not (ui-is-clipped? x y (+ x w) (+ y h)))
       (let ((color (fg-color *drawing-settings*)))
-        (krma:scene-draw-2d-line *scene* line-width color (+ x inset)       (+ y inset)    (- (+ x w) inset) (- (+ y h) inset))
-        (krma:scene-draw-2d-line *scene* line-width color (+ x inset)    (- (+ y h) inset) (- (+ x w) inset)    (+ y inset))))))
+        (krma:scene-draw-2d-line *scene* group line-width color (+ x inset)       (+ y inset)    (- (+ x w) inset) (- (+ y h) inset))
+        (krma:scene-draw-2d-line *scene* group line-width color (+ x inset)    (- (+ y h) inset) (- (+ x w) inset)    (+ y inset))))))
 
 #-krma
 (defun draw-cursor (x y)
@@ -1019,7 +1019,7 @@
         (gl:end)))))
 
 #+krma
-(defun draw-cursor (x y)
+(defun draw-cursor (x y &optional (group :default))
   (with-app-globals (*app*)
     (let ((x0 (- x 3))
           (x1 (+ x 2))
@@ -1028,9 +1028,9 @@
       (when (not (ui-is-clipped? x0 y0 x1 y1))
         (let ((line-width *ui-border-width*)
               (color (fg-color *drawing-settings*)))
-          (krma:scene-draw-2d-line *scene* line-width color x  y0 x  y1)
-          (krma:scene-draw-2d-line *scene* line-width color x0 y0 x1 y0)
-          (krma:scene-draw-2d-line *scene* line-width color x0 y1 x1 y1))))))
+          (krma:scene-draw-2d-line *scene* group line-width color x  y0 x  y1)
+          (krma:scene-draw-2d-line *scene* group line-width color x0 y0 x1 y0)
+          (krma:scene-draw-2d-line *scene* group line-width color x0 y1 x1 y1))))))
 
 #-krma
 (defmethod draw-title-bar ((view ui-group) x-offset y-offset)
@@ -1048,21 +1048,21 @@
                    (+ 16 y y-offset) (title view) :color #xffffffff))))
 
 #+krma
-(defmethod draw-title-bar ((view ui-group) x-offset y-offset)
+(defmethod draw-title-bar ((view ui-group) x-offset y-offset &optional (group :default))
   (with-app-globals (*app*)
     (let ((color (c! 0.4 0.4 0.4 0.8)))
       (setf (fg-color *drawing-settings*) color)
       (with-accessors ((fg fg-color) (x ui-x) (y ui-y) (w ui-w))
           view
         ;; fill
-        (draw-rect-fill (+ x x-offset) (+ y y-offset) w *ui-button-item-height*)
+        (draw-rect-fill (+ x x-offset) (+ y y-offset) w *ui-button-item-height* group)
         ;; border
         (setf (fg-color *drawing-settings*) (c! (c-red fg) (c-green fg) (c-blue fg) (c-alpha fg)))
 
-        (draw-rect-border (+ x x-offset) (+ y y-offset) w *ui-button-item-height*)
+        (draw-rect-border (+ x x-offset) (+ y y-offset) w *ui-button-item-height* group)
         ;; title
         (render-text (+ (ui-centered-text-x (title view) w) x x-offset)
-                     (+ 16 y y-offset) (title view) :color #xffffffff)))))
+                     (+ 16 y y-offset) (title view) :color #xffffffff :group group)))))
 
 #-krma
 (defmethod draw-ui-view ((view ui-view) x-offset y-offset)
@@ -1082,63 +1082,63 @@
                             line-width))))))
 
 #+krma
-(defmethod draw-ui-view ((view ui-view) x-offset y-offset)
+(defmethod draw-ui-view ((view ui-view) x-offset y-offset &optional (group :default))
   (with-app-globals (*app*)
     (with-accessors ((bg bg-color) (fg fg-color) (x ui-x) (y ui-y) (w ui-w) (h ui-h))
         view
       ;; fill
       (when (> (c-alpha bg) 0)
         (setf (fg-color *drawing-settings*)(c! (c-red bg) (c-green bg) (c-blue bg) (c-alpha bg)))
-        (draw-rect-fill (+ x x-offset) (+ y y-offset) w h))
+        (draw-rect-fill (+ x x-offset) (+ y y-offset) w h 0.0 group))
       ;; border
       (when (or (draw-border? view) (highlight? view)) ;draw border if highlighted
         (let ((line-width (if (highlight? view) *ui-highlight-border-width* *ui-border-width*)))
           (setf (fg-color *drawing-settings*) (c! (c-red fg) (c-green fg) (c-blue fg) (c-alpha fg)))
           (draw-rect-border (+ x x-offset) (+ y y-offset) w h
                             (if (> line-width 1) (* 0.5 line-width) 0)
-                            line-width))))))
+                            line-width group))))))
   
-(defgeneric draw-view (view x-offset y-offset)
+(defgeneric draw-view (view x-offset y-offset &optional group)
 
-  (:method ((view ui-view) x-offset y-offset)
+  (:method ((view ui-view) x-offset y-offset &optional (group :default))
     (when (is-visible? view)
-      (draw-ui-view view x-offset y-offset)))
+      (draw-ui-view view x-offset y-offset group)))
   
-  (:method ((view ui-label-item) x-offset y-offset)
+  (:method ((view ui-label-item) x-offset y-offset &optional (group :default))
     (when (is-visible? view)
-      (draw-ui-view view x-offset y-offset)
+      (draw-ui-view view x-offset y-offset group)
       (with-accessors ((x ui-x) (y ui-y))
           view
-        (render-text (+ (text-padding view) x x-offset) (+ 16 y y-offset) (text view)))))
+        (render-text (+ (text-padding view) x x-offset) (+ 16 y y-offset) (text view) :group group))))
 
-  (:method ((view ui-outliner-item) x-offset y-offset)
+  (:method ((view ui-outliner-item) x-offset y-offset &optional (group :default))
     (when (is-visible? view)
 
                                         ;      (print (list view (text view) x-offset y-offset))
       
-      (draw-ui-view view x-offset y-offset)
+      (draw-ui-view view x-offset y-offset group)
       (with-accessors ((x ui-x) (y ui-y))
           view
-        (render-text (+ (text-padding view) x x-offset) (+ 16 y y-offset) (outliner-item-text view)))))
+        (render-text (+ (text-padding view) x x-offset) (+ 16 y y-offset) (outliner-item-text view) :group group))))
 
-  (:method ((view ui-button-item) x-offset y-offset)
+  (:method ((view ui-button-item) x-offset y-offset &optional (group :default))
     (when (is-visible? view)
       (draw-ui-view view x-offset y-offset)
       (with-accessors ((x ui-x) (y ui-y))
           view
-        (render-text (+ 5 x x-offset) (+ 16 y y-offset) (key-text view))
+        (render-text (+ 5 x x-offset) (+ 16 y y-offset) (key-text view) :group group)
         (render-text (+ (ui-centered-text-x (text view) (ui-w view)) x x-offset)
-                     (+ 16 y y-offset) (text view)))))
+                     (+ 16 y y-offset) (text view) :group group))))
 
-  (:method ((view ui-menu-item) x-offset y-offset)
+  (:method ((view ui-menu-item) x-offset y-offset &optional (group :default))
     (when (is-visible? view)
       (draw-ui-view view x-offset y-offset)
       (with-accessors ((x ui-x) (y ui-y))
           view
-        (render-text (+ 5 x x-offset) (+ 16 y y-offset) (key-text view))
-        (render-text (+ 30 x x-offset) (+ 16 y y-offset) (text view)))))
+        (render-text (+ 5 x x-offset) (+ 16 y y-offset) (key-text view) :group group)
+        (render-text (+ 30 x x-offset) (+ 16 y y-offset) (text view) :group group))))
 
-  (:method ((view ui-check-box-item) x-offset y-offset)
+  (:method ((view ui-check-box-item) x-offset y-offset &optional (group :default))
     #-krma
     (with-app-globals (*app*)
       (when (is-visible? view)
@@ -1168,33 +1168,33 @@
           (when (> (c-alpha cbg) 0)
             (setf (fg-color *drawing-settings*) (c! (c-red cbg) (c-green cbg) (c-blue cbg) (c-alpha cbg)))
             (draw-rect-fill (+ x x-offset 4) (+ y y-offset 4)
-                            (- *ui-button-item-height* 8) (- *ui-button-item-height* 8)))
+                            (- *ui-button-item-height* 8) (- *ui-button-item-height* 8) group))
           (setf (fg-color *drawing-settings*) (c! (c-red fg) (c-green fg) (c-blue fg) (c-alpha fg)))
           (draw-rect-border (+ x x-offset 4) (+ y y-offset 4)
-                            (- *ui-button-item-height* 8) (- *ui-button-item-height* 8))
+                            (- *ui-button-item-height* 8) (- *ui-button-item-height* 8) group)
           (when (is-pushed? view)
             (draw-rect-x-mark (+ x x-offset 4) (+ y y-offset 4)
                               (- *ui-button-item-height* 9) (- *ui-button-item-height* 8)
-                              0 (* 2 *ui-border-width*)))))))
+                              0 (* 2 *ui-border-width*) group))))))
 
-  (:method ((view ui-text-box-item) x-offset y-offset)
+  (:method ((view ui-text-box-item) x-offset y-offset &optional (group :default))
     (with-app-globals (*app*)
       (when (is-visible? view)
-        (draw-ui-view view x-offset y-offset)
+        (draw-ui-view view x-offset y-offset group)
         (with-accessors ((x ui-x) (y ui-y))
             view
           (let ((local-x (+ 5 x x-offset))
                 (local-y (+ y y-offset)))
-            (render-text local-x (+ 16 local-y) (text view))
+            (render-text local-x (+ 16 local-y) (text view) :group group)
             (when (eq view *ui-keyboard-focus*)
-              (draw-cursor (+ local-x (* *ui-font-width* (cursor-position view))) local-y)))))))
+              (draw-cursor (+ local-x (* *ui-font-width* (cursor-position view))) local-y group)))))))
 
-  (:method :after ((view ui-group) x-offset y-offset)
+  (:method :after ((view ui-group) x-offset y-offset &optional (group :default))
     (when (is-visible? view)
       (when (title view)
-        (draw-title-bar view x-offset y-offset))
+        (draw-title-bar view x-offset y-offset group))
       (loop for child across (children view)
-            do (draw-view child (+ (ui-x view) x-offset) (+ (ui-y view) y-offset)))))
+            do (draw-view child (+ (ui-x view) x-offset) (+ (ui-y view) y-offset) group))))
   )
 
 ;;;; hit testing -------------------------

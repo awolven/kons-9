@@ -130,8 +130,8 @@
 
 (defmethod transform-matrix ((self angle-axis-transform) &optional (factor 1.0))
   (let ((t-mtx (transform-matrix (translate self) factor))
-	(r-mtx (transform-matrix (rotate self) factor))
-	(s-mtx (transform-matrix (scale self) factor)))
+	      (r-mtx (transform-matrix (rotate self) factor))
+	      (s-mtx (transform-matrix (scale self) factor)))
     (case (operator-order self)
       (:trs (matrix-multiply-n t-mtx r-mtx s-mtx))
       (:tsr (matrix-multiply-n t-mtx s-mtx r-mtx))
@@ -213,3 +213,26 @@
         (apply #'matrix-multiply-n mtx-list))
       (make-id-matrix)))
 
+(defun transform-matrix-to-mat4 (matrix)
+  (let ((m (3d-matrices:meye 4)))
+    ;; 3d-matrices are row-major
+    (setf (3d-matrices:mcref4 m 0 0) (aref matrix 0 0)
+          (3d-matrices:mcref4 m 1 0) (aref matrix 0 1)
+          (3d-matrices:mcref4 m 2 0) (aref matrix 0 2)
+          (3d-matrices:mcref4 m 3 0) (aref matrix 0 3)
+
+          (3d-matrices:mcref4 m 0 1) (aref matrix 1 0)
+          (3d-matrices:mcref4 m 1 1) (aref matrix 1 1)
+          (3d-matrices:mcref4 m 2 1) (aref matrix 1 2)
+          (3d-matrices:mcref4 m 3 1) (aref matrix 1 3)
+
+          (3d-matrices:mcref4 m 0 2) (aref matrix 2 0)
+          (3d-matrices:mcref4 m 1 2) (aref matrix 2 1)
+          (3d-matrices:mcref4 m 2 2) (aref matrix 2 2)
+          (3d-matrices:mcref4 m 3 2) (aref matrix 2 3)
+
+          (3d-matrices:mcref4 m 0 3) (aref matrix 3 0)
+          (3d-matrices:mcref4 m 1 3) (aref matrix 3 1)
+          (3d-matrices:mcref4 m 2 3) (aref matrix 3 2)
+          (3d-matrices:mcref4 m 3 3) (aref matrix 3 3))
+    m))
