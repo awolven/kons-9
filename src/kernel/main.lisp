@@ -147,9 +147,10 @@ krma::(defmethod main ((app kons-9::kons-9))
           ;; one time commands here.
           (unless (probe-file (asdf/system:system-relative-pathname :krma "acache.json"))
             (sdf-bmfont:create-bmfont #+linux "/usr/share/fonts/liberation-mono/LiberationMono-Regular.ttf"
+				      #+darwin "/System/Library/Fonts/Monaco.ttf"
                                       #+windows "C:/Windows/Fonts/Arial.ttf" "acache.json"
                                       :size 16 :mode :msdf+a :type :json :spread 8))
-          #-linux
+          #-(or linux darwin)
           (unless (probe-file (asdf/system:system-relative-pathname :krma "tcache.json"))
             (sdf-bmfont:create-bmfont "C:/Windows/Fonts/Times.ttf" "tcache.json"
                                       :size 16 :mode :msdf+a :type :json :spread 8))
@@ -158,7 +159,7 @@ krma::(defmethod main ((app kons-9::kons-9))
           (setq *font*
                 (vulkan-make-font device queue sampler texture-dsl descriptor-pool command-buffer
                                   :cache-file "acache.json"))
-          #-linux
+          #-(or linux darwin)
           (setq *font2*
                 (vulkan-make-font device queue sampler texture-dsl descriptor-pool command-buffer
                                   :cache-file "tcache.json"))
@@ -178,66 +179,79 @@ krma::(defmethod main ((app kons-9::kons-9))
             (with-slots (exit?) app
 
               (loop until (glfw:window-should-close-p)
-                    do
-                       (glfw:poll-events)
+		 with frames = 0
+		 with fps
+		 with time = (/ (get-internal-real-time) internal-time-units-per-second)
+		 with base-time = 0
+		 do
+		   (glfw:poll-events)
 
-                       (when (recreate-swapchain? main-window)
-                         (multiple-value-bind (width height) (get-framebuffer-size main-window)
-                           (recreate-swapchain main-window (swapchain main-window) width height)
-		                     (setf (main-window-width app) width
-			                        (main-window-height app) height)
-                           (setf (recreate-swapchain? main-window) nil)))
+		   (when (recreate-swapchain? main-window)
+		     (multiple-value-bind (width height) (get-framebuffer-size main-window)
+		       (recreate-swapchain main-window (swapchain main-window) width height)
+		       (setf (main-window-width app) width
+			     (main-window-height app) height)
+		       (setf (recreate-swapchain? main-window) nil)))
 
-                       (let* ((swapchain (swapchain main-window))
-                              (frame-count (number-of-images swapchain))
-                              (current-frame (car current-frame-cons))
-                              (current-draw-data (car current-draw-data-cons))
-                              (scene (application-scene app))
-                              (frame-resource0 (elt (frame-resources swapchain) current-frame))
-                              (command-buffer (frame-command-buffer frame-resource0))
-                              (rm-draw-data (aref (rm-draw-data scene) current-draw-data)))
+		   (let* ((swapchain (swapchain main-window))
+			  (frame-count (number-of-images swapchain))
+			  (current-frame (car current-frame-cons))
+			  (current-draw-data (car current-draw-data-cons))
+			  (scene (application-scene app))
+			  (frame-resource0 (elt (frame-resources swapchain) current-frame))
+			  (command-buffer (frame-command-buffer frame-resource0))
+			  (rm-draw-data (aref (rm-draw-data scene) current-draw-data)))
 
-                         (erase-immediate-mode-draw-data app)
-                         (setq work-queue (draw-data-work-queue rm-draw-data))
+		     (erase-immediate-mode-draw-data app)
+		     (setq work-queue (draw-data-work-queue rm-draw-data))
 
-                         (maybe-defer-debug (app)
-                           (loop with work = nil
-                                 while (setq work (sb-concurrency:dequeue work-queue))
-                                 do (funcall work)))
+		     (maybe-defer-debug (app)
+		       (loop with work = nil
+			  while (setq work (sb-concurrency:dequeue work-queue))
+			  do (funcall work)))
 
-                         (call-immediate-mode-work-functions app)
+		     (call-immediate-mode-work-functions app)
 
-                         (setq image-index
-                               (frame-begin swapchain (render-pass swapchain)
-                                            current-frame (kons-9::c! 1 1 1 1)
-                                            command-pool))
+		     (setq image-index
+			   (frame-begin swapchain (render-pass swapchain)
+					current-frame (kons-9::c! 1 1 1 1)
+					command-pool))
 
-                         ;;(update-2d-camera scene)
-                         ;;(update-3d-camera scene)
+		     ;;(update-2d-camera scene)
+		     ;;(update-3d-camera scene)
 
-                         (maybe-defer-debug (app)
-                           kons-9::(3d-setup-projection)
-                           kons-9::(destructuring-bind (w h) (application-window-size *app*)
-                                     (2d-setup-projection w h))
-                           kons-9::(progn
-                                     (draw-scene-view *scene-view*)
-                                     (update-status-bar-for-scene)
-                                     ))
+		     (maybe-defer-debug (app)
+		       kons-9::(3d-setup-projection)
+		       kons-9::(destructuring-bind (w h) (application-window-size *app*)
+				 (2d-setup-projection w h))
+		       kons-9::(progn
+				 (draw-scene-view *scene-view*)
+				 (update-status-bar-for-scene)
+				 krma::(incf frames)
+				 krma::(setq time (/ (get-internal-real-time) internal-time-units-per-second))
+				 krma::(when (> (- time base-time) 1)
+					 (setq fps (float (/ frames (- time base-time))))
+					 (setq base-time time)
+					 (setq frames 0))
+				   
+				     
+				 (krma::draw-text (format nil "fps: ~4,0f" krma::fps) (- (car (application-window-size krma::app)) 100) 10 :color #x000000ff)
+				 ))
 
-                         ;; render here.
-		                   (render-scene scene app command-buffer rm-draw-data (im-draw-data scene))
+		     ;; render here.
+		     (render-scene scene app command-buffer rm-draw-data (im-draw-data scene))
 
 
 
-                         (frame-end swapchain queue current-frame)
+		     (frame-end swapchain queue current-frame)
 
-                         (frame-present swapchain queue current-frame image-index main-window)
+		     (frame-present swapchain queue current-frame image-index main-window)
 
-                         ;; this needs to be the only thread that modifies current-frame
-                         (sb-ext:atomic-update (car current-frame-cons)
-                                               #'(lambda (cf) (mod (1+ cf) frame-count)))
-                         (sb-ext:atomic-update (car current-draw-data-cons)
-                                               #'(lambda (cdd) (mod (1+ cdd) 2)))))
+		     ;; this needs to be the only thread that modifies current-frame
+		     (sb-ext:atomic-update (car current-frame-cons)
+					   #'(lambda (cf) (mod (1+ cf) frame-count)))
+		     (sb-ext:atomic-update (car current-draw-data-cons)
+					   #'(lambda (cdd) (mod (1+ cdd) 2)))))
 
               (shutdown-application app)))))
 

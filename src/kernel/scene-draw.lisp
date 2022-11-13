@@ -14,7 +14,7 @@
 
   ;; push matrix and do transform operations before drawing
   (:method :before ((shape shape))
-    #+krma(krma::create-group-1 (krma:im-draw-data *scene*) (shape-krma-group shape))
+    #+krma(krma::find-or-create-group-1 (krma:im-draw-data *scene*) (shape-krma-group shape))
     (when (is-visible? shape)
       (let ((xform (transform shape)))
         (3d-push-matrix (transform-matrix xform)))))
@@ -72,7 +72,7 @@
           (when *display-wireframe?*
             (3d-draw-wireframe-polygons (points polyh) (faces polyh) :group group))
           (when *display-points?*
-            (draw-points polyh nil))
+            (draw-points polyh nil group))
           (when (show-normals polyh)
             (draw-normals polyh))))))
   )
@@ -93,8 +93,8 @@
 
 ;;; point-cloud helper methods -------------------------------------------------
 
-(defmethod draw-points ((p-cloud point-cloud) use-point-colors?)
-  (3d-draw-points (points p-cloud) (if use-point-colors? (point-colors p-cloud) nil)))
+(defmethod draw-points ((p-cloud point-cloud) use-point-colors? &optional (group :default))
+  (3d-draw-points (points p-cloud) (if use-point-colors? (point-colors p-cloud) nil) :group group))
 
 ;;; curve helper methods -----------------------------------------------------
 (defmethod draw-wireframe ((curve curve))

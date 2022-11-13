@@ -1055,11 +1055,11 @@
       (with-accessors ((fg fg-color) (x ui-x) (y ui-y) (w ui-w))
           view
         ;; fill
-        (draw-rect-fill (+ x x-offset) (+ y y-offset) w *ui-button-item-height* group)
+        (draw-rect-fill  (+ x x-offset) (+ y y-offset) w *ui-button-item-height* 0.0 group)
         ;; border
         (setf (fg-color *drawing-settings*) (c! (c-red fg) (c-green fg) (c-blue fg) (c-alpha fg)))
 
-        (draw-rect-border (+ x x-offset) (+ y y-offset) w *ui-button-item-height* group)
+        (draw-rect-border (+ x x-offset) (+ y y-offset) w *ui-button-item-height* 0.0 4.0 group)
         ;; title
         (render-text (+ (ui-centered-text-x (title view) w) x x-offset)
                      (+ 16 y y-offset) (title view) :color #xffffffff :group group)))))
@@ -1171,7 +1171,7 @@
                             (- *ui-button-item-height* 8) (- *ui-button-item-height* 8) group))
           (setf (fg-color *drawing-settings*) (c! (c-red fg) (c-green fg) (c-blue fg) (c-alpha fg)))
           (draw-rect-border (+ x x-offset 4) (+ y y-offset 4)
-                            (- *ui-button-item-height* 8) (- *ui-button-item-height* 8) group)
+                            (- *ui-button-item-height* 8) (- *ui-button-item-height* 8) 0.0 4.0 group)
           (when (is-pushed? view)
             (draw-rect-x-mark (+ x x-offset 4) (+ y y-offset 4)
                               (- *ui-button-item-height* 9) (- *ui-button-item-height* 8)

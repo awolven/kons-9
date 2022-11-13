@@ -310,7 +310,6 @@
        #+NIL(krma:mortho-vulkan (* -15 *viewport-aspect-ratio*) (* 15 *viewport-aspect-ratio*)
                            -15 15
 						   0.01d0 1000.0d0)
-       #+vulkan
        (krma:mperspective-vulkan 45.0d0 *viewport-aspect-ratio* 0.01d0 1000.0d0)
        #+metal
        (krma:mperspective-metal 45.0d0 *viewport-aspect-ratio* 0.01d0 1000.0d0)
@@ -812,7 +811,6 @@
 
 #+krma
 (defun 2d-setup-projection (w h)
-  #-darwin
   (krma::update-2d-camera *scene* (krma:mortho-vulkan 0.0 w h 0.0 -1.0 1.0) (3d-matrices:meye 4))
-  #+darwin
+  #+notyet
   (krma::update-2d-camera *scene* (krma:mortho-metal 0.0 w h 0.0 -1.0 1.0)))

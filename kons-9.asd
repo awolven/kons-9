@@ -75,7 +75,7 @@
    (:file "src/graphics/glfw/glfw-gui")
    ;;(:file "src/graphics/opengl/text-common")
    ;;(:file "src/graphics/opengl/text-opengl-common")
-   #+darwin(:file "src/graphics/opengl/opengl2-text")
+   #+(and darwin notyet)(:file "src/graphics/opengl/opengl2-text")
    ;;#-darwin(:file "src/graphics/opengl/opengl3-text")
    ;; plugins
    (:file "src/plugins/parametric-curve")

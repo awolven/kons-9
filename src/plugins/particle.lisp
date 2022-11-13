@@ -245,7 +245,7 @@
     (3d-draw-points (make-array (length visible-points) :initial-contents visible-points)
                     nil)))
 
-(defmethod draw-points ((p-sys particle-system) use-point-colors?)
+(defmethod draw-points ((p-sys particle-system) use-point-colors? &optional (group :default))
   (if (draw-live-points-only? p-sys)
       (draw-live-points p-sys use-point-colors?)
       (call-next-method)))
