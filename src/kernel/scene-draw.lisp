@@ -14,7 +14,7 @@
 
   ;; push matrix and do transform operations before drawing
   (:method :before ((shape shape))
-    #+krma(krma::find-or-create-group-1 (krma:im-draw-data *scene*) (shape-krma-group shape))
+    #+krma(krma::ensure-group-1 (krma:im-draw-data *scene*) (shape-krma-group shape))
     (when (is-visible? shape)
       (let ((xform (transform shape)))
         (3d-push-matrix (transform-matrix xform)))))
