@@ -191,6 +191,7 @@ krma::(defmethod main ((app kons-9::kons-9))
                          ;; let's not heat up the computer if we're in VK_PRESENT_MODE_IMMEDIATE or something
                          ;; can't seem to get a resolution lower than 1/60 s or so
                          ;; oh well, works ok on my PC ~60Hz
+                         ;; nanosleep must call sleep on Windows!
                          (sb-unix:nanosleep 0 2000000))
 
                        (setq last-time time)

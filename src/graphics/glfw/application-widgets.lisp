@@ -24,7 +24,7 @@
            (timing (absolute-timing view))
            (x0 (+ x (* base-width (aref timing 0)))) ;(start-time motion))))
            (w0 (* base-width (aref timing 1)))) ;(duration motion))))
-      (draw-rect-fill (+ x0 x-offset 10) (+ y y-offset +5) w0 (- h 10) group)))))
+      (draw-rect-fill (+ x0 x-offset 10) (+ y y-offset +5) w0 (- h 10) 0.0 group)))))
 
 ;;;; ui-motion-outliner-viewer ========================================================
 
@@ -49,4 +49,4 @@
           (y-lo (+ (ui-y view) y-offset *ui-button-item-height*))
           (y-hi (+ (ui-y view) (ui-h view) y-offset)))
       (draw-line (lerp rel-time x-lo x-hi) y-lo
-                 (lerp rel-time x-lo x-hi) y-hi group))))
+                 (lerp rel-time x-lo x-hi) y-hi 1 group))))

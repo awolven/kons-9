@@ -945,7 +945,7 @@
       (krma:scene-draw-filled-2d-rectangle-list
        *scene* group
        (fg-color *drawing-settings*)
-       (list       x             (+ y inset)
+       (list       x              (+ y inset)
                 (+ x w)           (+ y inset)
                    x           (- (+ y h) inset)
                 (+ x w)        (- (+ y h) inset)
@@ -975,10 +975,10 @@
   (with-app-globals (*app*)
     (when (not (ui-is-clipped? x y (+ x w) (+ y h)))
       (let ((color (fg-color *drawing-settings*)))
-        (krma:scene-draw-2d-line *scene* group line-width color       x              (+ y inset)       (+ x w)              (+ y inset))
-        (krma:scene-draw-2d-line *scene* group line-width color       x           (- (+ y h) inset)    (+ x w)           (- (+ y h) inset))
-        (krma:scene-draw-2d-line *scene* group line-width color (- (+ x w) inset)    (+ y inset)       (- (+ x w) inset)    (+ y inset))
-        (krma:scene-draw-2d-line *scene* group line-width color    (+ x inset)       (+ y inset)          (+ x inset)       (+ y inset))))))
+        (krma:scene-draw-2d-line *scene* group line-width color       x              (+ y    inset)       (+ x w)           (+ y    inset))
+        (krma:scene-draw-2d-line *scene* group line-width color       x           (- (+ y h) inset)       (+ x w)        (- (+ y h) inset))
+        (krma:scene-draw-2d-line *scene* group line-width color (- (+ x w) inset)    (+ y    inset)    (- (+ x w) inset) (- (+ y h) inset))
+        (krma:scene-draw-2d-line *scene* group line-width color    (+ x    inset)    (+ y    inset)       (+ x    inset) (- (+ y h) inset))))))
 
 
 #-krma
@@ -1062,7 +1062,7 @@
         (draw-rect-border (+ x x-offset) (+ y y-offset) w *ui-button-item-height* 0.0 4.0 group)
         ;; title
         (render-text (+ (ui-centered-text-x (title view) w) x x-offset)
-                     (+ 16 y y-offset) (title view) :color #xffffffff :group group)))))
+                     (+ 16 y y-offset) (title view) :color fg :group group)))))
 
 #-krma
 (defmethod draw-ui-view ((view ui-view) x-offset y-offset)
@@ -1168,7 +1168,7 @@
           (when (> (c-alpha cbg) 0)
             (setf (fg-color *drawing-settings*) (c! (c-red cbg) (c-green cbg) (c-blue cbg) (c-alpha cbg)))
             (draw-rect-fill (+ x x-offset 4) (+ y y-offset 4)
-                            (- *ui-button-item-height* 8) (- *ui-button-item-height* 8) group))
+                            (- *ui-button-item-height* 8) (- *ui-button-item-height* 8) 0.0 group))
           (setf (fg-color *drawing-settings*) (c! (c-red fg) (c-green fg) (c-blue fg) (c-alpha fg)))
           (draw-rect-border (+ x x-offset 4) (+ y y-offset 4)
                             (- *ui-button-item-height* 8) (- *ui-button-item-height* 8) 0.0 4.0 group)
