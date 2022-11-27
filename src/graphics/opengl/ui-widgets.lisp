@@ -8,7 +8,7 @@
 (defun render-text (pos-x pos-y string &key (color #x000000ff) (group :default))
   (when (not (stringp string))
     (setq string (princ-to-string string)))
-  (krma::draw-text string  pos-x (- pos-y 12.6) :color color :group group))
+  (krma::draw-text string pos-x (- pos-y 12) :color color :group group))
 
 ;;;; ui utils ==================================================================
 

@@ -151,7 +151,8 @@ krma::(defmethod main ((app kons-9::kons-9))
 	     (asdf/system:system-relative-pathname
 	      :krma "submodules/krma-fonts/Roboto_Mono/static/RobotoMono-Medium.ttf")
 	     (asdf/system:system-relative-pathname :krma "submodules/krma-fonts/rm16cache.json")
-	     :size 16 :mode :msdf+a :type :json :spread 8))
+	     :size (floor 24 kons-9::(monitor-scale drawing-settings))
+	     :mode :msdf+a :type :json :spread 8))
 
 	  (uiop/filesystem:with-current-directory
 	      ((asdf/system:system-relative-pathname :krma "submodules/krma-fonts/"))
@@ -267,6 +268,6 @@ krma::(defmethod main ((app kons-9::kons-9))
   (funcall
    (lambda ()
      #+darwin(sb-int:set-floating-point-modes :traps nil)
-     (krma:main (make-instance 'kons-9))
+     (krma:main (make-instance 'kons-9 :width 960 :height 540))
      #+NIL
      (kons-9::show-window kons-9::*scene*))))
