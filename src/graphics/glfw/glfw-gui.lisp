@@ -545,7 +545,7 @@
       ;; (gl:viewport x0 y0 w0 h0)))
       (setf (viewport-aspect-ratio (scene *scene-view*)) (/ w h))
       ;; TODO -- figure out why this is half-size viewport on retina display
-      #-(or darwin (not krma))(gl:viewport 0 0 w h)
+      #-(or darwin krma)(gl:viewport 0 0 w h)
       )))
 
 (defun window-resized (window w h)
