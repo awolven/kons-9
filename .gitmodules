@@ -1,0 +1,3 @@
+[submodule "submodules/krma"]
+	path = submodules/krma
+	url = git@github.com:awolven/krma.git

@@ -15,9 +15,6 @@
    #:cl-opengl
    #:cl-glu
    #:cl-glfw3
-   #-krma #:cl-paths-ttf                       ;for font libraries
-   #-krma #:zpb-ttf                            ;for font libraries
-   #-krma #:cl-vectors                         ;for font libraries
    #:origin
    #:clobber
    #:krma)
@@ -101,6 +98,8 @@
    (:file "src/plugins/usd")
    (:file "src/plugins/obj")
    ))
+
+(pushnew (asdf/system:system-relative-pathname :kons-9 "submodules/krma/") asdf:*central-registry* :test #'equalp)
 
 (asdf:defsystem #:kons-9/testsuite
   :description "Testsuite for Common Lisp 3D Graphics System"
