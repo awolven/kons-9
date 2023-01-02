@@ -13,6 +13,10 @@
    (current-frame 0)
    (fps 24)))
 
+(defmethod krma::render-scene :before ((scene scene) app command-buffer rm-draw-data im-draw-data)
+  (declare (ignorable  app command-buffer rm-draw-data im-draw-data))
+  (draw-scene-view *scene-view*))
+
 (defmethod printable-data ((self scene))
   (strcat (call-next-method)
           (format nil ", frame bounds: ~a ~a, current: ~a "

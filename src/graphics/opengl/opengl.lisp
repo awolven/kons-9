@@ -220,6 +220,7 @@
 #+krma
 (defun gl-enable-light (light-id dir &optional (color (light-color (application-drawing-settings *app*))))
   (declare (ignore light-id color))
+  #+NIL
   (setf (krma:scene-light-position *scene*) (3d-vectors:vec3 (p:x dir) (p:y dir) (p:z dir)))
   (values))
 
@@ -230,6 +231,7 @@
 #+krma
 (defun gl-disable-light (light-id)
   (declare (ignore light-id))
+  #+NIL
   (setf (krma:scene-light-position *scene*) nil)
   (values))
 
@@ -268,6 +270,7 @@
     (let* ((mtx (matrix-multiply (make-x-rotation-matrix (- (radians *cam-x-rot*)))
                                  (make-y-rotation-matrix (- (radians *cam-y-rot*)))))
            (point (transform-point (p! 0 0 1) mtx)))
+      #+NIL
       (setf (krma:scene-light-position (application-scene *app*)) (3d-vectors:vec3 (p:x point) (p:y point) (p:z point))))))
 
 

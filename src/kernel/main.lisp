@@ -28,11 +28,19 @@
    (*ui-font-width* :initform 7.3 :accessor ui-font-width)
    (*transaction-log* :initform nil :accessor application-transaction-log)))
 
+(setq krma::*default-application-class* 'kons-9)
+
+(defmethod vk::main ((app kons-9) &rest args &key &allow-other-keys)
+  (apply #'krma::krma-application-main app args))
+
+
+
 (defmethod initialize-instance :after ((instance kons-9) &rest initargs)
   (declare (ignore initargs))
   (setq *scene-view* (make-instance 'scene-view :scene (krma:application-scene instance)))
   (set-lines-thin)
   (setq glfw:*window* (vk:h (vk:main-window instance)))
+  (setf (slot-value (vk:main-window instance) 'vk::clear-value) (c! 1 1 1 1))
   (setf (application-window-size instance) (glfw:get-window-size))
   (update-gl-3d-viewport)
   (update-window-title glfw:*window*)
@@ -120,6 +128,8 @@
 (defmethod krma:scene-class ((app kons-9))
   'krma-enabled-scene)
 
+
+#+NIL
 (defmethod krma::main ((app kons-9::kons-9))
   (let* ((device (vk:default-logical-device app))
 	 (main-window (vk:main-window app))
